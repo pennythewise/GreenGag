@@ -1,0 +1,126 @@
+.mapc__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 4px 20px 20px;
+}
+
+.mapc__map {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: linear-gradient(135deg, #eef2ec, #e7ece6);
+  border: var(--border-hair);
+  min-height: 200px;
+}
+.mapc__heat {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 0;
+}
+.mapc__cell {
+  width: 100%;
+  height: 100%;
+  transition: opacity var(--fade), background var(--fade);
+}
+.mapc__poly {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.mapc__poly-shape {
+  fill: rgba(30, 42, 58, 0.04);
+  stroke: var(--text-navy);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 2;
+}
+.mapc__map-cap {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-navy);
+  background: rgba(255, 253, 248, 0.82);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.mapc__chart-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.mapc__chart-head {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text-navy);
+  margin-bottom: 6px;
+}
+.mapc__chart {
+  width: 100%;
+  height: auto;
+}
+.mapc__grid {
+  stroke: rgba(30, 42, 58, 0.08);
+  stroke-width: 1;
+}
+.mapc__line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mapc__line--claimed {
+  stroke: var(--slate-blue);
+  stroke-dasharray: 4 3;
+}
+.mapc__line--observed {
+  stroke: var(--terra);
+}
+.mapc__axis {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  fill: var(--text-faint);
+}
+
+.mapc__legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 8px 0;
+}
+.mapc__sw {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.mapc__sw--claimed {
+  background: var(--slate-blue);
+}
+.mapc__sw--observed {
+  background: var(--terra);
+}
+.mapc__variance {
+  font-size: 11.5px;
+  color: var(--text-charcoal);
+  background: var(--terra-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-top: auto;
+}
+.mapc__variance strong {
+  color: var(--terra);
+}
+
+@media (max-width: 560px) {
+  .mapc__body {
+    grid-template-columns: 1fr;
+  }
+}

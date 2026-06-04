@@ -1,0 +1,112 @@
+.rsr {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 22px 28px;
+}
+
+.rsr__dial {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  justify-self: center;
+}
+.rsr__svg {
+  width: 100%;
+  height: 100%;
+}
+.rsr__track {
+  fill: none;
+  stroke: var(--surface-sunken);
+  stroke-width: 16;
+}
+.rsr__progress {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+  transition: stroke-dasharray 600ms var(--ease-organic), stroke var(--fade);
+}
+.rsr__tick {
+  stroke: rgba(30, 42, 58, 0.16);
+  stroke-width: 1.5;
+}
+
+.rsr__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rsr__score {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1;
+  transition: color var(--fade);
+}
+.rsr__score-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.rsr__live {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--slate-blue);
+  animation: gg-fade-in 200ms linear both;
+}
+
+.rsr__verdict {
+  padding: 8px 6px;
+}
+.rsr__verdict-tag {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin: 8px 0 12px;
+}
+.rsr__summary {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-charcoal);
+  margin: 0 0 18px;
+  max-width: 62ch;
+}
+.rsr__meta {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.rsr__meta-item {
+  display: flex;
+  flex-direction: column;
+}
+.rsr__meta-num {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-navy);
+}
+.rsr__veto {
+  color: var(--terra);
+  letter-spacing: 0.08em;
+}
+.rsr__meta-cap {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 720px) {
+  .rsr {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,13 @@
+# GreenGag backend
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+python-dotenv>=1.0.1
+
+# Agent orchestration (graph supervisor). The app degrades gracefully to a
+# sequential runner if this is not installed.
+langgraph>=0.2.0
+
+# LLM SDKs (used only in GREENGAG_DATA_MODE=live)
+anthropic>=0.39.0
+openai>=1.54.0

@@ -1,0 +1,100 @@
+.pdfv {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.pdfv__doc-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 0 20px 10px;
+  font-style: italic;
+}
+
+.pdfv__pages {
+  padding: 0 20px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+.pdfv__page {
+  background: var(--surface);
+  border: var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.pdfv__page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: var(--border-hair);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.pdfv__page-no {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.pdfv__page-heading {
+  font-size: 14px;
+}
+
+.pdfv__block {
+  position: relative;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-charcoal);
+  margin: 0 0 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background var(--fade), box-shadow var(--fade);
+}
+.pdfv__block--claim {
+  background: var(--amber-highlight);
+  cursor: pointer;
+  padding-right: 10px;
+}
+.pdfv__block--claim:hover {
+  background: rgba(232, 193, 112, 0.6);
+}
+.pdfv__block--active {
+  background: rgba(232, 193, 112, 0.78);
+  box-shadow: 0 0 0 2px var(--amber), var(--shadow-sm);
+}
+.pdfv__claim-tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a6d2f;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1px 7px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.pdfv__legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px 18px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.pdfv__swatch {
+  width: 22px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--amber-highlight);
+  border: 1px solid var(--amber);
+}
+.pdfv__contrib {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}

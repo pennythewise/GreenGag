@@ -1,0 +1,108 @@
+.sfeed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sfeed__stream {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 20px 20px;
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.sfeed__card {
+  border: var(--border-hair);
+  border-left: 3px solid var(--slate-blue);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--fade), transform var(--fade);
+}
+.sfeed__card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.sfeed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sfeed__tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+}
+.sfeed__tag--community {
+  background: var(--slate-blue);
+}
+.sfeed__tag--ngo {
+  background: var(--sage);
+}
+.sfeed__tag--news {
+  background: var(--text-muted);
+}
+.sfeed__tag--incident {
+  background: var(--terra);
+}
+.sfeed__date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.sfeed__headline {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: var(--text-navy);
+  margin: 0 0 6px;
+}
+.sfeed__snippet {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.sfeed__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sfeed__source {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.sfeed__score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sfeed__score-bar {
+  width: 60px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.sfeed__score-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 500ms var(--ease-organic);
+}
+.sfeed__score-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+}
