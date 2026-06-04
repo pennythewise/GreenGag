@@ -5,7 +5,6 @@ cross-referencing unstructured PDF reports against financial ledgers, public
 media, and satellite remote-sensing data, then surfaces a weighted fraud risk
 score to compliance auditors.
 
-> Product spec: [PRD.md](PRD.md) · Engineering guide: [CLAUDE.md](CLAUDE.md)
 
 This build runs **mock-first**: the full agent graph and dashboard work
 end-to-end against deterministic fixtures with no external API keys. Live API
