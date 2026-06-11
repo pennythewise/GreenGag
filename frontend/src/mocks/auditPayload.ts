@@ -349,7 +349,7 @@ export const MOCK_AUDIT: AuditPayload = {
     confidence_score: 0.89,
     final_verdict: 'CRITICAL_RISK_FRAUD_DETECTED',
     executive_summary:
-      'Malaya BuildCorp’s 30% decarbonization claim for the KL Central Eco-Tower is not supported by physical, financial, or public evidence. Satellite NO₂ readings show no reduction (+40% variance, flatline), while 85% of procurement spend was routed to high-carbon suppliers despite a "green budget" claim. An NGO-logged discharge contradicts the zero-incident statement. The Geospatial Truth Agent has asserted its veto. Verdict: CRITICAL RISK — fraud detected.',
+      'Malaya BuildCorp’s 30% decarbonization claim for the KL Central Eco-Tower is not supported by physical, financial, or public evidence. Satellite NO₂ readings show no reduction (+40% variance, flatline), while 85% of procurement spend was routed to high-carbon suppliers despite a "green budget" claim. An NGO-logged discharge contradicts the zero-incident statement. The Geospatial Truth Agent has asserted its veto. Verdict: Critical greenwashing risk — these findings require human review and do not constitute a legal determination.',
     agent_weights: {
       GeospatialTruthAgent: 0.5,
       LedgerAuditorAgent: 0.25,

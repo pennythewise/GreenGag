@@ -1,0 +1,479 @@
+/* ============================================================================
+   Wizard step views — shared layout, headers, buttons, and per-step styles.
+   Light eggshell/cream design system (index.css tokens). No dark theme.
+   ========================================================================== */
+
+.wz {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.wz--wide {
+  max-width: 100%;
+}
+
+/* ── Step header ───────────────────────────────────────────────────────── */
+.wz__head {
+  margin-bottom: 26px;
+}
+.wz__head--row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.wz__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+.wz__title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.12;
+  color: var(--text-navy);
+  margin: 8px 0 0;
+}
+.wz__lede {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 640px;
+  margin: 12px 0 0;
+}
+.wz__lede--tight {
+  margin-top: 8px;
+  font-size: 13.5px;
+}
+.wz__lede strong {
+  color: var(--text-charcoal);
+  font-weight: 600;
+}
+.wz__target-icon {
+  vertical-align: -2px;
+  margin-right: 5px;
+  color: var(--terra);
+}
+.wz__head-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.wz-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--fade), transform var(--fade), opacity var(--fade), border-color var(--fade);
+  white-space: nowrap;
+}
+.wz-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.wz-btn--primary {
+  background: var(--sage);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.wz-btn--primary:hover:not(:disabled) {
+  background: #4d7a63;
+  transform: translateY(-1px);
+}
+.wz-btn--ghost {
+  background: var(--surface);
+  color: var(--text-charcoal);
+  border-color: rgba(30, 42, 58, 0.12);
+}
+.wz-btn--ghost:hover:not(:disabled) {
+  border-color: var(--sage);
+  color: var(--sage);
+}
+
+/* ── Step 1: Upload dropzone ───────────────────────────────────────────── */
+.wz-drop {
+  border: 2px dashed rgba(30, 42, 58, 0.16);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--fade), background var(--fade), transform var(--fade);
+}
+.wz-drop:hover {
+  border-color: var(--sage);
+}
+.wz-drop.is-dragging {
+  border-color: var(--sage);
+  background: var(--sage-soft);
+  transform: scale(1.005);
+}
+.wz-drop.is-picked {
+  border-style: solid;
+  border-color: var(--sage);
+  background: var(--sage-soft);
+}
+.wz-drop__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  background: var(--sage-soft);
+  color: var(--sage);
+}
+.wz-drop__primary {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--text-navy);
+}
+.wz-drop__secondary {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.wz-drop__file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: left;
+}
+.wz-drop__file-icon {
+  color: var(--sage);
+}
+.wz-drop__file-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-navy);
+}
+.wz-drop__file-meta {
+  font-size: 12px;
+  color: var(--sage);
+  margin-top: 2px;
+}
+
+.wz-upload__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.wz-sample {
+  margin-top: 26px;
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  border: var(--border-hair);
+}
+.wz-sample__tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.wz-sample__entity {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-navy);
+  margin-top: 6px;
+}
+.wz-sample__project {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.wz-sample__note {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+
+/* ── Step 2: Claims ────────────────────────────────────────────────────── */
+.claims-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.claims-grid__pdf {
+  min-width: 0;
+}
+.claims-grid__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 72vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.claim-card {
+  text-align: left;
+  background: var(--surface);
+  border: 1.5px solid rgba(30, 42, 58, 0.1);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color var(--fade), box-shadow var(--fade), transform var(--fade);
+  font-family: var(--font-body);
+}
+.claim-card:hover {
+  border-color: var(--slate-blue);
+}
+.claim-card.is-active {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px var(--sage-soft);
+}
+.claim-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.claim-card__radio {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.claim-card__radio.is-on {
+  color: var(--sage);
+}
+.claim-card__label {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  color: var(--text-navy);
+}
+.claim-card__raw {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+}
+.claim-card__struct {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: var(--border-hair);
+}
+.claim-card__struct-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.claim-card__kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  padding: 3px 0;
+}
+.claim-card__k {
+  font-family: var(--font-mono);
+  color: var(--slate-blue);
+}
+.claim-card__v {
+  color: var(--text-charcoal);
+  text-align: right;
+}
+.claims-grid__hint {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--amber-soft);
+}
+.claims-grid__hint svg {
+  color: var(--amber);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Step 3: Evidence ──────────────────────────────────────────────────── */
+.ev-block {
+  margin-bottom: 22px;
+}
+.ev-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 22px;
+  align-items: start;
+}
+
+/* ── Step 4: Dashboard ─────────────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 22px;
+  margin: 22px 0;
+  align-items: start;
+}
+.dash-card {
+  min-width: 0;
+}
+.dash-weights {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dash-weight__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+.dash-weight__name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--text-navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-weight__veto {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--terra);
+  color: #fff;
+}
+.dash-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.dash-chip--contradicts {
+  background: var(--terra-soft);
+  color: var(--terra);
+}
+.dash-chip--supports {
+  background: var(--sage-soft);
+  color: var(--sage);
+}
+.dash-chip--insufficient {
+  background: var(--slate-blue-soft);
+  color: var(--slate-blue);
+}
+.dash-weight__bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.dash-weight__weight {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(74, 107, 138, 0.28);
+  border-radius: 999px;
+}
+.dash-weight__risk {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--terra);
+  border-radius: 999px;
+  transition: width var(--fade);
+}
+.dash-weight__meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+.dash-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.dash-source {
+  display: block;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  transition: background var(--fade);
+}
+.dash-source:hover {
+  background: var(--surface-sunken);
+  text-decoration: none;
+}
+.dash-source__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--slate-blue);
+}
+.dash-source__detail {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+.dash-review {
+  display: flex;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  background: var(--amber-soft);
+  border: 1px solid rgba(232, 193, 112, 0.5);
+}
+.dash-review svg {
+  color: var(--terra);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.dash-review__title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-navy);
+}
+.dash-review__text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-charcoal);
+  margin: 6px 0 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .claims-grid,
+  .ev-grid,
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .claims-grid__list {
+    max-height: none;
+  }
+}
+@media (max-width: 720px) {
+  .wz__title {
+    font-size: 24px;
+  }
+}

@@ -17,12 +17,17 @@ export const statusLabel: Record<AgentStatus, string> = {
   ALERT: 'Alert',
 };
 
+/**
+ * Display labels use responsible, non-accusatory wording (proposal §14.6).
+ * The top tier keeps PRD severity but is framed as a risk indicator that
+ * "requires human review" rather than a fraud accusation.
+ */
 export const verdictLabel: Record<FinalVerdict, string> = {
   CLEAR: 'Clear',
-  LOW_RISK: 'Low Risk',
-  MODERATE_RISK: 'Moderate Risk',
-  HIGH_RISK: 'High Risk',
-  CRITICAL_RISK_FRAUD_DETECTED: 'Critical — Fraud Detected',
+  LOW_RISK: 'Low Greenwashing Risk',
+  MODERATE_RISK: 'Moderate Greenwashing Risk',
+  HIGH_RISK: 'High Greenwashing Risk',
+  CRITICAL_RISK_FRAUD_DETECTED: 'Critical Greenwashing Risk · Requires Human Review',
 };
 
 /** Maps a 0–1 risk score to an accent color along sage → amber → terra. */

@@ -1,91 +1,88 @@
+import { useState } from 'react';
 import { useAudit } from './hooks/useAudit';
-import { SelectionProvider } from './lib/selection';
-import { RiskScoreRing } from './components/RiskScoreRing/RiskScoreRing';
-import { AgentSwimlane } from './components/AgentSwimlane/AgentSwimlane';
-import { PDFViewer } from './components/PDFViewer/PDFViewer';
-import { LedgerTimeline } from './components/LedgerTimeline/LedgerTimeline';
-import { DiscrepancyCanvas } from './components/DiscrepancyCanvas/DiscrepancyCanvas';
-import { MapCanvas } from './components/MapCanvas/MapCanvas';
-import { SentimentFeed } from './components/SentimentFeed/SentimentFeed';
+import { SelectionProvider, useSelection } from './lib/selection';
+import { stepIndex, type WizardStep } from './lib/steps';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { UploadView } from './components/wizard/UploadView';
+import { ClaimsView } from './components/wizard/ClaimsView';
+import { EvidenceView } from './components/wizard/EvidenceView';
+import { DashboardView } from './components/wizard/DashboardView';
 import './App.css';
 
-export default function App() {
-  const { audit, phase, live, run } = useAudit();
-  const { meta } = audit;
+function Wizard() {
+  const { audit, phase, run } = useAudit();
+  const { setActiveClaim, setActiveDiscrepancy } = useSelection();
+
+  const [step, setStep] = useState<WizardStep>('upload');
+  const [reached, setReached] = useState<WizardStep>('upload');
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
+
+  const parser = audit.agent_states.ReportParserAgent;
+  const selectedClaim = parser.extracted_claims.find((c) => c.id === selectedClaimId) ?? null;
+
+  /** Unlock up to `target` (never downgrade) and move there. */
+  function go(target: WizardStep) {
+    setStep(target);
+    if (stepIndex(target) > stepIndex(reached)) setReached(target);
+  }
+
+  function handleIngest() {
+    go('claims');
+  }
+
+  function handleTriangulate() {
+    if (!selectedClaimId) return;
+    go('evidence');
+    run(); // staged multi-agent simulation (no backend)
+  }
+
+  function handleReset() {
+    setActiveClaim(null);
+    setActiveDiscrepancy(null);
+    setSelectedClaimId(null);
+    setReached('upload');
+    setStep('upload');
+  }
 
   return (
+    <div className="gg-shell">
+      <Sidebar current={step} reached={reached} onNavigate={setStep} />
+
+      <main className="gg-main gg-scroll">
+        <div className="gg-main__inner">
+          {step === 'upload' && <UploadView meta={audit.meta} onIngest={handleIngest} />}
+
+          {step === 'claims' && (
+            <ClaimsView
+              parser={parser}
+              meta={audit.meta}
+              selectedClaimId={selectedClaimId}
+              onSelect={setSelectedClaimId}
+              onProceed={handleTriangulate}
+            />
+          )}
+
+          {step === 'evidence' && (
+            <EvidenceView
+              audit={audit}
+              phase={phase}
+              claim={selectedClaim}
+              onReplay={run}
+              onProceed={() => go('dashboard')}
+            />
+          )}
+
+          {step === 'dashboard' && <DashboardView audit={audit} onReset={handleReset} />}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
     <SelectionProvider>
-      <div className="gg-app">
-        <header className="gg-topbar">
-          <div className="gg-brand">
-            <div className="gg-brand__mark" aria-hidden />
-            <div>
-              <div className="gg-brand__name">GreenGag</div>
-              <div className="gg-brand__tag">Greenwashing Audit Console</div>
-            </div>
-          </div>
-
-          <div className="gg-target">
-            <div className="gg-target__entity">{meta.target_entity}</div>
-            <div className="gg-target__project">{meta.project_name}</div>
-          </div>
-
-          <div className="gg-runbar">
-            <span className="gg-audit-id">{audit.audit_id}</span>
-            <button
-              className="gg-run-btn"
-              onClick={() => run({ preferLive: true })}
-              disabled={phase === 'running'}
-            >
-              {phase === 'running'
-                ? live
-                  ? 'Streaming…'
-                  : 'Auditing…'
-                : 'Re-run Audit'}
-            </button>
-          </div>
-        </header>
-
-        <main className="gg-grid">
-          {/* Orchestrator master ring — top center. */}
-          <section className="gg-grid__ring">
-            <RiskScoreRing metrics={audit.global_metrics} phase={phase} />
-          </section>
-
-          {/* Live multi-agent swimlanes. */}
-          <section className="gg-grid__swimlane">
-            <AgentSwimlane states={audit.agent_states} weights={audit.global_metrics.agent_weights} />
-          </section>
-
-          {/* XAI evidence row: PDF (reader) + ledger (accountant). */}
-          <section className="gg-grid__pdf">
-            <PDFViewer state={audit.agent_states.ReportParserAgent} />
-          </section>
-          <section className="gg-grid__ledger">
-            <LedgerTimeline state={audit.agent_states.LedgerAuditorAgent} />
-          </section>
-
-          {/* Discrepancy Canvas — animated SVG triangulation linkages. */}
-          <section className="gg-grid__canvas">
-            <DiscrepancyCanvas audit={audit} />
-          </section>
-
-          {/* Geospatial truth + public sentiment. */}
-          <section className="gg-grid__map">
-            <MapCanvas state={audit.agent_states.GeospatialTruthAgent} meta={meta} />
-          </section>
-          <section className="gg-grid__feed">
-            <SentimentFeed state={audit.agent_states.MediaSentinelAgent} />
-          </section>
-        </main>
-
-        <footer className="gg-footer">
-          <span>
-            Weighted Integrity Index · Geospatial truth carries 50% · GeospatialTruthAgent holds veto
-          </span>
-          <span className="gg-footer__mode">{live ? 'live stream' : 'mock data'}</span>
-        </footer>
-      </div>
+      <Wizard />
     </SelectionProvider>
   );
 }
