@@ -118,6 +118,108 @@
 .mapc__variance strong {
   color: var(--terra);
 }
+.mapc__variance--alert {
+  background: var(--terra-soft);
+}
+.mapc__veto-line {
+  font-weight: 700;
+  color: var(--terra);
+}
+.mapc__no-data {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 20px 0;
+  text-align: center;
+}
+.mapc__chart-unit {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  margin-left: 8px;
+}
+
+/* Layer tabs */
+.mapc__tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 12px;
+  flex-wrap: wrap;
+}
+.mapc__tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: var(--border-hair);
+  background: transparent;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--fade), color var(--fade);
+}
+.mapc__tab:hover {
+  background: var(--card-bg);
+}
+.mapc__tab--active {
+  background: var(--text-navy);
+  color: #fff;
+  border-color: var(--text-navy);
+}
+.mapc__tab--alert {
+  border-color: var(--terra);
+  color: var(--terra);
+}
+.mapc__tab--active.mapc__tab--alert {
+  background: var(--terra);
+  color: #fff;
+  border-color: var(--terra);
+}
+
+/* Layer source badges */
+.mapc__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+.mapc__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.mapc__badge--ok {
+  background: var(--sage-soft, #eef4ee);
+  color: var(--sage);
+  border-color: var(--sage);
+}
+.mapc__badge--alert {
+  background: var(--terra-soft);
+  color: var(--terra);
+  border-color: var(--terra);
+}
+.mapc__badge--info {
+  background: #eef2f7;
+  color: var(--slate-blue);
+  border-color: var(--slate-blue);
+}
+.mapc__badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.mapc__badge-veto {
+  font-weight: 700;
+  margin-left: 2px;
+}
 
 @media (max-width: 560px) {
   .mapc__body {

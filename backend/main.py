@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 
 from agents import orchestrator
 from config import settings
+from mocks import fixtures
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("greengag")
@@ -78,6 +79,24 @@ async def audit_stream() -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.get("/api/audit/kl-central")
+async def audit_kl_central() -> dict:
+    """Return the KL Central Eco-Tower mock audit payload (default demo)."""
+    return fixtures.kl_central_audit_payload().model_dump()
+
+
+@app.get("/api/audit/sunway-quarry")
+async def audit_sunway_quarry() -> dict:
+    """Return the Sunway Quarry Rawang mock audit (NO2 + CH4 GHG cross-check)."""
+    return fixtures.sunway_quarry_audit_payload().model_dump()
+
+
+@app.get("/api/audit/ulu-muda")
+async def audit_ulu_muda() -> dict:
+    """Return the Ulu Muda Reforestation mock audit (NDVI canopy coverage check)."""
+    return fixtures.ulu_muda_audit_payload().model_dump()
 
 
 if __name__ == "__main__":

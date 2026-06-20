@@ -1,22 +1,46 @@
-import type { AuditPayload, TimeSeriesPoint, HeatPixel } from '../types/audit';
+import type { AuditPayload, HeatPixel, LayerTimeSeries } from '../types/audit';
 
 /* ── Geospatial fixtures ──────────────────────────────────────────────── */
 
-// 12-month series: company claims a steady reduction; satellite observes a flatline.
-const TIME_SERIES: TimeSeriesPoint[] = [
-  { date: '2025-06', claimed: 100, observed: 100 },
-  { date: '2025-07', claimed: 96, observed: 101 },
-  { date: '2025-08', claimed: 92, observed: 99 },
-  { date: '2025-09', claimed: 87, observed: 102 },
-  { date: '2025-10', claimed: 83, observed: 100 },
-  { date: '2025-11', claimed: 79, observed: 103 },
-  { date: '2025-12', claimed: 75, observed: 101 },
-  { date: '2026-01', claimed: 72, observed: 104 },
-  { date: '2026-02', claimed: 70, observed: 100 },
-  { date: '2026-03', claimed: 70, observed: 102 },
-  { date: '2026-04', claimed: 70, observed: 105 },
-  { date: '2026-05', claimed: 70, observed: 103 },
-];
+const NO2_SERIES: LayerTimeSeries = {
+  layer_id: 'no2',
+  label: 'NO₂ Tropospheric Column',
+  unit: 'µmol/m² (normalized index)',
+  points: [
+    { date: '2025-06', claimed: 100, observed: 100 },
+    { date: '2025-07', claimed: 96,  observed: 101 },
+    { date: '2025-08', claimed: 92,  observed: 99  },
+    { date: '2025-09', claimed: 87,  observed: 102 },
+    { date: '2025-10', claimed: 83,  observed: 100 },
+    { date: '2025-11', claimed: 79,  observed: 103 },
+    { date: '2025-12', claimed: 75,  observed: 101 },
+    { date: '2026-01', claimed: 72,  observed: 104 },
+    { date: '2026-02', claimed: 70,  observed: 100 },
+    { date: '2026-03', claimed: 70,  observed: 102 },
+    { date: '2026-04', claimed: 70,  observed: 105 },
+    { date: '2026-05', claimed: 70,  observed: 103 },
+  ],
+};
+
+const WIND_SERIES: LayerTimeSeries = {
+  layer_id: 'weather',
+  label: 'Surface Wind Speed (ERA5)',
+  unit: 'm/s',
+  points: [
+    { date: '2025-06', claimed: 12, observed: 14 },
+    { date: '2025-07', claimed: 11, observed: 13 },
+    { date: '2025-08', claimed: 13, observed: 15 },
+    { date: '2025-09', claimed: 12, observed: 14 },
+    { date: '2025-10', claimed: 10, observed: 12 },
+    { date: '2025-11', claimed: 11, observed: 16 },
+    { date: '2025-12', claimed: 14, observed: 17 },
+    { date: '2026-01', claimed: 13, observed: 15 },
+    { date: '2026-02', claimed: 12, observed: 14 },
+    { date: '2026-03', claimed: 11, observed: 13 },
+    { date: '2026-04', claimed: 12, observed: 15 },
+    { date: '2026-05', claimed: 13, observed: 16 },
+  ],
+};
 
 // Heat grid over the KL Central polygon — hot core where the factory sits.
 const HEATMAP: HeatPixel[] = (() => {
@@ -289,23 +313,48 @@ export const MOCK_AUDIT: AuditPayload = {
       status: 'ALERT',
       risk_contribution: 0.95,
       progress: 1,
-      active_tool: 'sentinel5p::tropomi-no2',
+      active_tool: 'sentinel5p::tropomi-no2 | ecmwf::era5-wind',
       rationale_trail: [
-        'Pulled time-series raster array values over the polygon target (12 months).',
-        'Calculated running mean of tropospheric NO₂ vertical column density.',
-        'Compared observed trend against the claimed 30% reduction curve.',
-        'Observed variance vs. claim: +40% (emissions did not fall).',
-        'Flatlined output indicates zero emissions reduction observed.',
-        'VETO ASSERTED: physical evidence contradicts the corporate commitment.',
+        'Parallel ingestion: 2 satellite layers fetched simultaneously.',
+        'Ingested Sentinel-5P L2 NetCDF for NO₂ over polygon (12 months).',
+        'Ingested ECMWF ERA5 GRIB for surface wind speed over same AOI.',
+        'Applied xarray spatial crop and polygon masking to both datasets.',
+        'NOAA HYSPLIT back-trajectory: wind confirms local source attribution.',
+        'GeoPandas geofencing: NO₂ anomaly centroid intersects asset boundary.',
+        'NO₂ anomaly detected via Sentinel-5P_TROPOMI: +40% above baseline (confidence 92%).',
+        'Wind Speed (ECMWF_ERA5): no anomaly detected.',
+        'NOAA HYSPLIT back-trajectory: plume attributed to audit polygon.',
+        'GeoPandas geofencing: anomaly centroid within asset boundary.',
+        'VETO ASSERTED: physical satellite evidence contradicts corporate claims.',
       ],
       metrics: {
-        satellite_source: 'Sentinel-5P_TROPOMI',
-        observed_gas_variance_percentage: 0.4,
-        confidence_index: 0.92,
+        layers: [
+          {
+            layer_id: 'no2',
+            source: 'Sentinel-5P_TROPOMI',
+            parameter: 'NO₂',
+            unit: 'µmol/m² (tropospheric column)',
+            observed_variance_pct: 0.40,
+            confidence_index: 0.92,
+            anomaly_detected: true,
+            veto: true,
+          },
+          {
+            layer_id: 'weather',
+            source: 'ECMWF_ERA5',
+            parameter: 'Wind Speed',
+            unit: 'm/s (10m surface)',
+            observed_variance_pct: 0.12,
+            confidence_index: 0.88,
+            anomaly_detected: false,
+            veto: false,
+          },
+        ],
+        plume_trajectory_modeled: true,
+        asset_geofenced: true,
         veto: true,
       },
-      unit: 'NO₂ tropospheric column (normalized index)',
-      time_series: TIME_SERIES,
+      layer_series: [NO2_SERIES, WIND_SERIES],
       heatmap: HEATMAP,
     },
   },

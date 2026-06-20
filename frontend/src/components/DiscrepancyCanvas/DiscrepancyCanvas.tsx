@@ -24,10 +24,14 @@ function evidenceFor(d: Discrepancy, audit: AuditPayload) {
   }
   if (d.geo_anchor) {
     const g = audit.agent_states.GeospatialTruthAgent.metrics;
+    const vetoed = g.layers.filter((l) => l.veto);
+    const topLayer = vetoed[0] ?? g.layers[0];
     return {
       kind: 'Satellite' as const,
-      title: `${g.satellite_source}`,
-      detail: `Observed variance +${Math.round(g.observed_gas_variance_percentage * 100)}% · flatline`,
+      title: topLayer ? `${topLayer.source} · ${topLayer.parameter}` : 'Satellite',
+      detail: topLayer
+        ? `Observed variance +${Math.round(topLayer.observed_variance_pct * 100)}% · ${vetoed.length} layer(s) flagged`
+        : 'Multi-layer anomaly detected',
       source: 'GeospatialTruthAgent',
     };
   }

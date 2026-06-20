@@ -148,16 +148,39 @@ export interface HeatPixel {
   intensity: number;
 }
 
-export interface GeospatialTruthState extends BaseAgentState {
-  metrics: {
-    satellite_source: string;
-    observed_gas_variance_percentage: number;
-    confidence_index: number;
-    /** Absolute veto power — overrides the verdict when true. */
-    veto: boolean;
-  };
+/** One satellite data source — e.g. Sentinel-5P NO₂, ERA5 wind, Planet NDVI. */
+export interface SatelliteLayer {
+  layer_id: string;
+  source: string;
+  parameter: string;
   unit: string;
-  time_series: TimeSeriesPoint[];
+  observed_variance_pct: number;
+  confidence_index: number;
+  anomaly_detected: boolean;
+  /** True when this layer's physical evidence contradicts the corporate claim. */
+  veto: boolean;
+}
+
+/** Claimed vs. observed time series for one satellite layer. */
+export interface LayerTimeSeries {
+  layer_id: string;
+  label: string;
+  unit: string;
+  points: TimeSeriesPoint[];
+}
+
+export interface GeoMetrics {
+  layers: SatelliteLayer[];
+  plume_trajectory_modeled: boolean;
+  asset_geofenced: boolean;
+  /** True if any layer asserts a veto. */
+  veto: boolean;
+}
+
+export interface GeospatialTruthState extends BaseAgentState {
+  metrics: GeoMetrics;
+  /** One time-series per satellite layer (claimed vs. observed). */
+  layer_series: LayerTimeSeries[];
   heatmap: HeatPixel[];
 }
 

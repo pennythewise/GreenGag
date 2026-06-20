@@ -32,11 +32,11 @@ export function DashboardView({ audit, onReset }: Props) {
       detail: a.headline,
       url: a.url,
     })),
-    {
-      label: agent_states.GeospatialTruthAgent.metrics.satellite_source,
-      detail: 'Tropospheric NO₂ time-series over target polygon',
+    ...agent_states.GeospatialTruthAgent.metrics.layers.map((l) => ({
+      label: l.source,
+      detail: `${l.parameter} time-series over target polygon${l.veto ? ' · VETO' : ''}`,
       url: '#',
-    },
+    })),
     {
       label: 'Internal procurement ledger',
       detail: `${agent_states.LedgerAuditorAgent.rows.length} purchase orders cross-checked`,

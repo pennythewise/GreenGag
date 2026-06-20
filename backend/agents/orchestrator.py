@@ -59,7 +59,11 @@ def compute_global_metrics(states: AgentStates) -> GlobalMetrics:
 
     geo = states.GeospatialTruthAgent
     veto = bool(geo.metrics and geo.metrics.veto)
-    geo_conf = geo.metrics.confidence_index if geo.metrics else 0.8
+    # Confidence: average across all satellite layers, fallback 0.8
+    if geo.metrics and geo.metrics.layers:
+        geo_conf = sum(l.confidence_index for l in geo.metrics.layers) / len(geo.metrics.layers)
+    else:
+        geo_conf = 0.8
     confidence = round(geo_conf * 0.96, 3)
 
     # Resolve verdict; the geospatial veto escalates the floor.
@@ -89,7 +93,12 @@ def _summarize(states: AgentStates, weighted: float, veto: bool) -> str:
     entity = fixtures.META.target_entity
     geo = states.GeospatialTruthAgent.metrics
     ledger = states.LedgerAuditorAgent.extracted_metrics
-    variance = f"+{round(geo.observed_gas_variance_percentage * 100)}%" if geo else "n/a"
+    # Use the highest observed variance across all satellite layers.
+    if geo and geo.layers:
+        top_layer = max(geo.layers, key=lambda l: l.observed_variance_pct)
+        variance = f"+{round(top_layer.observed_variance_pct * 100)}% ({top_layer.parameter})"
+    else:
+        variance = "n/a"
     green_ratio = f"{round(ledger.green_ratio * 100)}%" if ledger else "n/a"
     veto_line = (
         " The Geospatial Truth Agent has asserted its veto."

@@ -145,17 +145,34 @@ class HeatPixel(BaseModel):
     intensity: float = Field(ge=0.0, le=1.0)
 
 
-class GeoMetrics(BaseModel):
-    satellite_source: str
-    observed_gas_variance_percentage: float
+class SatelliteLayer(BaseModel):
+    layer_id: str       # "no2" | "ch4" | "co2" | "ndvi" | "weather"
+    source: str         # "Sentinel-5P_TROPOMI" | "ECMWF_ERA5" | "Planet_NDVI" | "GEE_NDVI"
+    parameter: str      # human label: "NO2", "CH4", "CO2", "NDVI", "Wind Speed"
+    unit: str
+    observed_variance_pct: float
     confidence_index: float
+    anomaly_detected: bool = False
     veto: bool = False
+
+
+class GeoMetrics(BaseModel):
+    layers: list[SatelliteLayer]
+    plume_trajectory_modeled: bool = False
+    asset_geofenced: bool = False
+    veto: bool = False  # True if any layer asserts a veto
+
+
+class LayerTimeSeries(BaseModel):
+    layer_id: str
+    label: str
+    unit: str
+    points: list[TimeSeriesPoint]
 
 
 class GeospatialTruthState(BaseAgentState):
     metrics: GeoMetrics | None = None
-    unit: str = ""
-    time_series: list[TimeSeriesPoint] = Field(default_factory=list)
+    layer_series: list[LayerTimeSeries] = Field(default_factory=list)
     heatmap: list[HeatPixel] = Field(default_factory=list)
 
 

@@ -11,3 +11,11 @@ langgraph>=0.2.0
 # LLM SDKs (used only in GREENGAG_DATA_MODE=live)
 anthropic>=0.39.0
 openai>=1.54.0
+
+# Satellite / geospatial (used only in GREENGAG_DATA_MODE=live)
+cdsapi>=0.7.0          # ECMWF CDS API client (reads ~/.cdsapirc for credentials)
+cfgrib>=0.9.14         # xarray engine for reading ERA5 GRIB files
+xarray>=2024.1.0
+rioxarray>=0.17.0      # polygon masking / spatial clip
+geopandas>=1.0.0       # asset geofencing (polygon intersect)
+planet>=2.4.0          # Planet Labs Data API client
