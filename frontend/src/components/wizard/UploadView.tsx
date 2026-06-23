@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
-import { UploadCloud, FileText, Sparkles, ArrowRight } from 'lucide-react';
+import { UploadCloud, FileText, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import type { AuditMeta } from '../../types/audit';
 import './wizard.css';
 
 interface Props {
   meta: AuditMeta;
-  onIngest: (fileName: string) => void;
+  onIngest: (input: { file?: File; sample?: boolean }) => Promise<void>;
+  busy?: boolean;
+  error?: string | null;
 }
 
 /**
@@ -13,17 +15,15 @@ interface Props {
  * shortcut. Since there is no backend, either action triggers the same canned
  * Malaya BuildCorp audit flow.
  */
-export function UploadView({ meta, onIngest }: Props) {
+export function UploadView({ meta, onIngest, busy = false, error }: Props) {
   const [dragging, setDragging] = useState(false);
-  const [picked, setPicked] = useState<{ name: string; size: string } | null>(null);
+  const [picked, setPicked] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function accept(file: File | undefined) {
     if (!file) return;
-    setPicked({ name: file.name, size: `${(file.size / 1024 / 1024).toFixed(2)} MB` });
+    setPicked(file);
   }
-
-  const sampleName = '2025_Sustainability_Net-Zero_Pathway.pdf';
 
   return (
     <div className="wz gg-fade-in">
@@ -65,7 +65,9 @@ export function UploadView({ meta, onIngest }: Props) {
             <FileText size={26} className="wz-drop__file-icon" />
             <div>
               <div className="wz-drop__file-name">{picked.name}</div>
-              <div className="wz-drop__file-meta">{picked.size} · ready to analyse</div>
+              <div className="wz-drop__file-meta">
+                {(picked.size / 1024 / 1024).toFixed(2)} MB · ready to analyse
+              </div>
             </div>
           </div>
         ) : (
@@ -82,20 +84,24 @@ export function UploadView({ meta, onIngest }: Props) {
       <div className="wz-upload__actions">
         <button
           className="wz-btn wz-btn--ghost"
-          onClick={() => onIngest(sampleName)}
+          disabled={busy}
+          onClick={() => void onIngest({ sample: true })}
         >
           <Sparkles size={16} />
           Use sample report
         </button>
         <button
           className="wz-btn wz-btn--primary"
-          disabled={!picked}
-          onClick={() => picked && onIngest(picked.name)}
+          disabled={!picked || busy}
+          onClick={() => picked && void onIngest({ file: picked })}
         >
+          {busy ? <Loader2 size={16} className="wz-spin" /> : null}
           Extract claims
           <ArrowRight size={16} />
         </button>
       </div>
+
+      {error && <div className="wz-error">{error}</div>}
 
       <div className="wz-sample">
         <div className="wz-sample__tag">Sample case loaded for this demo</div>

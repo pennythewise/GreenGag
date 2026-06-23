@@ -477,3 +477,35 @@
     font-size: 24px;
   }
 }
+
+.wz-error {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fdecea;
+  color: #7a271a;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wz-banner {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #eef4ef;
+  color: var(--text-charcoal);
+  font-size: 13px;
+}
+
+.wz-spin {
+  animation: wz-spin 0.9s linear infinite;
+}
+
+@keyframes wz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

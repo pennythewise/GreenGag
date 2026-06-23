@@ -11,24 +11,41 @@ interface Props {
   selectedClaimId: string | null;
   onSelect: (id: string) => void;
   onProceed: () => void;
+  busy?: boolean;
+  error?: string | null;
+  documentId?: string | null;
+  onRetryExtract?: () => void;
 }
 
 /** Builds the structured claim-object fields shown in the inspector panel. */
 function structuredFields(claim: ExtractedClaim, meta: AuditMeta) {
-  const fields: { k: string; v: string }[] = [
-    { k: 'entity', v: meta.target_entity },
-    { k: 'claim_type', v: claim.label },
-  ];
+  const fields: { k: string; v: string }[] = [];
+  if (claim.pillar) fields.push({ k: 'pillar', v: claim.pillar });
+  if (claim.claim_type) fields.push({ k: 'claim_type', v: claim.claim_type });
+  fields.push({ k: 'entity', v: claim.entity ?? meta.target_entity });
+  if (claim.target_value) fields.push({ k: 'target_value', v: claim.target_value });
+  if (claim.achieved_value) fields.push({ k: 'achieved_value', v: claim.achieved_value });
   if (claim.claimed_reduction_pct != null)
-    fields.push({ k: 'target_value', v: `${claim.claimed_reduction_pct}% reduction` });
+    fields.push({ k: 'reduction_target', v: `${claim.claimed_reduction_pct}%` });
   if (claim.material_class) fields.push({ k: 'material_class', v: claim.material_class });
   if (claim.stated_spend_usd != null)
     fields.push({ k: 'stated_spend', v: fmtUSD(claim.stated_spend_usd) });
-  fields.push({ k: 'project', v: meta.project_name });
+  if (claim.confidence != null)
+    fields.push({ k: 'confidence', v: `${Math.round(claim.confidence * 100)}%` });
+  fields.push({ k: 'project', v: claim.location ?? meta.project_name });
   return fields;
 }
 
-export function ClaimsView({ parser, meta, selectedClaimId, onSelect, onProceed }: Props) {
+export function ClaimsView({
+  parser,
+  meta,
+  selectedClaimId,
+  onSelect,
+  onProceed,
+  busy,
+  error,
+  onRetryExtract,
+}: Props) {
   const { setActiveClaim } = useSelection();
   const claims = parser.extracted_claims;
   const selected = claims.find((c) => c.id === selectedClaimId) ?? null;
@@ -49,6 +66,20 @@ export function ClaimsView({ parser, meta, selectedClaimId, onSelect, onProceed 
           <ArrowRight size={16} />
         </button>
       </header>
+
+      {busy && (
+        <div className="wz-banner">Extracting claims from retrieved report sections…</div>
+      )}
+      {error && (
+        <div className="wz-error">
+          {error}
+          {onRetryExtract && (
+            <button className="wz-btn wz-btn--ghost" onClick={onRetryExtract}>
+              Retry extraction
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="claims-grid">
         <div className="claims-grid__pdf">

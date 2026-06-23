@@ -138,5 +138,5 @@ export function useAudit() {
     {} as Record<AgentKey, AgentStatus>,
   );
 
-  return { audit, phase, live, run, agentStatuses, agentOrder: AGENT_ORDER };
+  return { audit, phase, live, run, setAudit, agentStatuses, agentOrder: AGENT_ORDER };
 }
