@@ -22,6 +22,8 @@ AgentKey = Literal[
     "GeospatialTruthAgent",
 ]
 
+EsgPillar = Literal["environment", "social", "governance"]
+
 
 class GeoPolygon(BaseModel):
     type: Literal["Polygon"] = "Polygon"
@@ -54,10 +56,25 @@ class ExtractedClaim(BaseModel):
     id: str
     label: str
     raw_text: str
+    pillar: EsgPillar | None = None
+    category: str | None = None
+    claim_type: str | None = None
+    entity: str | None = None
+    metric: str | None = None
+    target_value: str | None = None
+    achieved_value: str | None = None
+    baseline_value: str | None = None
+    time_period: str | None = None
+    location: str | None = None
+    unit: str | None = None
+    page: int | None = None
+    section_heading: str | None = None
+    key_metrics: dict[str, str | float | int | bool | None] = Field(default_factory=dict)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     claimed_reduction_pct: float | None = None
     material_class: str | None = None
     stated_spend_usd: float | None = None
-    highlight: HighlightBox
+    highlight: HighlightBox | None = None
 
 
 class PdfBlock(BaseModel):
