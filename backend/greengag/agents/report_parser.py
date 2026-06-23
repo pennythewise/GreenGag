@@ -23,7 +23,7 @@ class ReportParserAgent(BaseAgent):
 
     async def _run_live(self) -> ReportParserState:
         # TODO(live): pull the source PDF, run layout extraction, then call
-        # Anthropic Claude (ANTHROPIC_API_KEY) to normalize claims into JSON.
+        # OpenAI to normalize claims into JSON.
         raise NotImplementedError(
-            "ReportParserAgent live mode requires a PDF source + ANTHROPIC_API_KEY."
+            "ReportParserAgent live mode requires a PDF source + OPENAI_API_KEY."
         )

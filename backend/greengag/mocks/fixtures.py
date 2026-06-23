@@ -89,7 +89,7 @@ def report_parser_state() -> ReportParserState:
         status="SUCCESS",
         risk_contribution=0.10,
         progress=1.0,
-        active_tool="pdf_extractor::claude-opus-4-8",
+        active_tool="pdf_extractor::gpt-4o",
         rationale_trail=[
             'Loaded ESG report "2025 Sustainability & Net-Zero Pathway" (48 pages).',
             "Stripped promotional cover, foreword, and 11 stock-photo pages.",

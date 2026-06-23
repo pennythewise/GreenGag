@@ -151,7 +151,7 @@ async def stream_audit() -> AsyncIterator[dict[str, Any]]:
 
 def _tool_hint(key: str) -> str:
     return {
-        "ReportParserAgent": "pdf_extractor::claude-opus-4-8",
+        "ReportParserAgent": "pdf_extractor::gpt-4o",
         "LedgerAuditorAgent": "ledger_query::postgres(internal)",
         "MediaSentinelAgent": "web_scraper::nlp-classifier",
         "GeospatialTruthAgent": "sentinel5p::tropomi-no2",

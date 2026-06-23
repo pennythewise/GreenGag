@@ -40,14 +40,14 @@ uvicorn greengag.main:app --reload --port 8000
 | POST | `/api/audit` | Start orchestrated audit |
 | GET | `/api/audit/stream` | SSE agent updates |
 | POST | `/api/documents/ingest` | Upload PDF → chunk → embed → Supabase |
-| POST | `/api/documents/{id}/extract` | RAG retrieve → Claude extract → claims |
+| POST | `/api/documents/{id}/extract` | RAG retrieve → OpenAI extract → claims |
 | GET | `/api/documents/{id}` | Document status + stored claims |
 
 ## Report Parser pipeline (live)
 
-1. **Ingest** — PDF uploaded to Supabase Storage; page-aware chunks with `pillar_hint`; OpenAI `text-embedding-3-large` at `dimensions=2000`; vectors stored in `document_chunks`.
-2. **Extract** — Per-pillar fixed queries → top-8 vector search → hybrid `pillar_hint` boost → 0.55 threshold → 15–20 chunks to Claude with taxonomy prompt → Pydantic validate + 1 retry → claims persisted.
+1. **Ingest** — PDF uploaded to Supabase Storage; page-aware chunks with `pillar_hint`; OpenAI `text-embedding-3-large` at `dimensions=2000`; vectors stored in `document_chunks`. **Duplicate PDFs** (same SHA-256 bytes + embedding model/dims) return the existing ready document without re-embedding.
+2. **Extract** — Per-pillar fixed queries → top-8 vector search → hybrid `pillar_hint` boost → 0.55 threshold → 15–20 chunks to OpenAI with taxonomy prompt → Pydantic validate + 1 retry → claims persisted.
 
-Requires: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `backend/supabase/schema.sql` applied in Supabase.
+Requires: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, and `backend/supabase/schema.sql` applied in Supabase.
 
 Without pipeline keys, document endpoints return mock fixture data (same as frontend demo).

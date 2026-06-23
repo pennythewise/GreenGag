@@ -1,4 +1,4 @@
-"""Claude-based ESG claim extraction with Pydantic validation + 1 retry."""
+"""OpenAI-based ESG claim extraction with Pydantic validation + 1 retry."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from anthropic import AsyncAnthropic
+from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from greengag.config import settings
@@ -40,9 +40,9 @@ def _format_chunks(chunks: list[RetrievedChunk]) -> str:
 
 class ClaimExtractor:
     def __init__(self) -> None:
-        if not settings.anthropic_api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY is required for extraction.")
-        self._client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+        if not settings.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY is required for extraction.")
+        self._client = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.llm_extraction_model
         self.system_prompt = _load_system_prompt()
 
@@ -62,9 +62,13 @@ class ClaimExtractor:
             "Return ONLY valid JSON matching the schema in the system prompt."
         )
 
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+
         last_error: str | None = None
         for attempt in range(2):
-            messages = [{"role": "user", "content": user_content}]
             if attempt == 1 and last_error:
                 messages.append(
                     {
@@ -76,15 +80,13 @@ class ClaimExtractor:
                     }
                 )
 
-            resp = await self._client.messages.create(
+            resp = await self._client.chat.completions.create(
                 model=self.model,
                 max_tokens=8192,
-                system=self.system_prompt,
+                response_format={"type": "json_object"},
                 messages=messages,
             )
-            raw = "".join(
-                block.text for block in resp.content if hasattr(block, "text")
-            )
+            raw = resp.choices[0].message.content or ""
             try:
                 payload = json.loads(_strip_json_fence(raw))
                 return ExtractionResponse.model_validate(payload)

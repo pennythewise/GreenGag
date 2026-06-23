@@ -27,12 +27,11 @@ REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
     "External data": ("NEWS_API_KEY", "INTERNAL_LEDGER_DB_URL"),
 }
 
-# Report Parser ingest + extract pipeline (RAG + Claude).
+# Report Parser ingest + extract pipeline (RAG + OpenAI extraction).
 PIPELINE_KEYS: tuple[str, ...] = (
     "SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
     "OPENAI_API_KEY",
-    "ANTHROPIC_API_KEY",
 )
 
 
@@ -120,7 +119,7 @@ def validate_environment() -> Settings:
         rag_similarity_threshold=float(os.getenv("RAG_SIMILARITY_THRESHOLD", "0.55")),
         rag_top_k_per_pillar=int(os.getenv("RAG_TOP_K_PER_PILLAR", "8")),
         rag_max_chunks_to_llm=int(os.getenv("RAG_MAX_CHUNKS_TO_LLM", "20")),
-        llm_extraction_model=os.getenv("LLM_EXTRACTION_MODEL", "claude-sonnet-4-5"),
+        llm_extraction_model=os.getenv("LLM_EXTRACTION_MODEL", "gpt-4o"),
     )
 
 
