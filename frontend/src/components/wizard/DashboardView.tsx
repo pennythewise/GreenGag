@@ -1,6 +1,6 @@
 import { Download, RefreshCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { AgentKey, AuditPayload } from '../../types/audit';
-import { RiskScoreRing } from '../RiskScoreRing/RiskScoreRing';
+import { RiskScoreRing } from '../audit/RiskScoreRing/RiskScoreRing';
 import { fmtPct } from '../../lib/format';
 import './wizard.css';
 

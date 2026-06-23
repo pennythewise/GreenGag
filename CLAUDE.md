@@ -22,31 +22,29 @@ GreenGag is a high-stakes multi-agent greenwashing detection platform. It audits
 ## Project Structure
 
 ```
-greengag/
-├── backend/
-│   ├── main.py                  # FastAPI app entrypoint
-│   ├── agents/
-│   │   ├── orchestrator.py      # OrchestratorAgent — LangGraph supervisor
-│   │   ├── report_parser.py     # ReportParserAgent — ESG PDF ingestion
-│   │   ├── ledger_auditor.py    # LedgerAuditorAgent — financial cross-check
-│   │   ├── media_sentinel.py    # MediaSentinelAgent — news/NGO scraping
-│   │   └── geospatial_truth.py  # GeospatialTruthAgent — satellite verification
-│   ├── models/
-│   │   └── schemas.py           # Pydantic models for the audit state payload
-│   └── config.py                # os.getenv() bindings, startup validation
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── AgentSwimlane/   # Live multi-agent status cards
-│   │   │   ├── DiscrepancyCanvas/ # SVG-linked split viewport
-│   │   │   ├── LedgerTimeline/  # Financial audit table
-│   │   │   ├── MapCanvas/       # Geospatial heatmap (Mapbox/Leaflet)
-│   │   │   ├── PDFViewer/       # Interactive ESG PDF with amber highlights
-│   │   │   ├── RiskScoreRing/   # Orchestrator master status ring
-│   │   │   └── SentimentFeed/   # Media Sentinel article stream
-│   │   └── App.tsx
-├── .env.example                 # API key placeholders — never commit .env
-└── PRD.md
+GreenGag/
+├── backend/                     # Python FastAPI package (see backend/README.md)
+│   └── greengag/
+│       ├── main.py
+│       ├── api/routes/
+│       ├── agents/
+│       ├── models/
+│       ├── mocks/
+│       └── scoring/
+├── frontend/                    # React wizard dashboard (see frontend/README.md)
+│   └── src/
+│       ├── app/
+│       ├── components/
+│       │   ├── layout/
+│       │   ├── audit/
+│       │   └── wizard/
+│       ├── hooks/
+│       ├── lib/
+│       ├── types/
+│       └── styles/
+├── .env.example
+├── PRD.md
+└── README.md
 ```
 
 ## Core Data Model
@@ -92,7 +90,7 @@ class AuditPayload(BaseModel):
 cd backend
 pip install -r requirements.txt
 cp ../.env.example ../.env   # then fill in keys
-uvicorn main:app --reload
+uvicorn greengag.main:app --reload
 
 # Frontend
 cd frontend

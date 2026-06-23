@@ -2,7 +2,7 @@ import { ArrowRight, CircleDot, Circle, AlertTriangle } from 'lucide-react';
 import type { AuditMeta, ExtractedClaim, ReportParserState } from '../../types/audit';
 import { useSelection } from '../../lib/selection';
 import { fmtUSD } from '../../lib/format';
-import { PDFViewer } from '../PDFViewer/PDFViewer';
+import { PDFViewer } from '../audit/PDFViewer/PDFViewer';
 import './wizard.css';
 
 interface Props {

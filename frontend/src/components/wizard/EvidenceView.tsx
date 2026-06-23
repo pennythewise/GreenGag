@@ -1,11 +1,11 @@
 import { ArrowRight, RotateCcw, Target } from 'lucide-react';
 import type { AuditPayload, ExtractedClaim } from '../../types/audit';
 import type { RunPhase } from '../../hooks/useAudit';
-import { AgentSwimlane } from '../AgentSwimlane/AgentSwimlane';
-import { DiscrepancyCanvas } from '../DiscrepancyCanvas/DiscrepancyCanvas';
-import { LedgerTimeline } from '../LedgerTimeline/LedgerTimeline';
-import { MapCanvas } from '../MapCanvas/MapCanvas';
-import { SentimentFeed } from '../SentimentFeed/SentimentFeed';
+import { AgentSwimlane } from '../audit/AgentSwimlane/AgentSwimlane';
+import { DiscrepancyCanvas } from '../audit/DiscrepancyCanvas/DiscrepancyCanvas';
+import { LedgerTimeline } from '../audit/LedgerTimeline/LedgerTimeline';
+import { MapCanvas } from '../audit/MapCanvas/MapCanvas';
+import { SentimentFeed } from '../audit/SentimentFeed/SentimentFeed';
 import './wizard.css';
 
 interface Props {

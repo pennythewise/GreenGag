@@ -15,28 +15,17 @@ the same interfaces — see `GREENGAG_DATA_MODE` below.
 
 ## What's implemented
 
-**Backend** (`backend/`, FastAPI + async)
-- `models/schemas.py` — Pydantic `AuditPayload` contract (single source of truth).
-- `config.py` — `os.getenv()` bindings + startup validation (hard-fails in live
-  mode on missing keys; warns in mock mode so the demo runs offline).
-- `agents/` — 5 async agents (Orchestrator + Report Parser, Ledger Auditor,
-  Media Sentinel, Geospatial Truth), each populating a `rationale_trail`.
-- `agents/orchestrator.py` — **LangGraph** supervisor applying the Weighted
-  Integrity Index (geospatial = 50%) with GeospatialTruthAgent **veto**.
-  Falls back to a sequential runner if LangGraph isn't installed.
-- `main.py` — `GET /api/health`, `POST /api/audit`, `GET /api/audit/stream` (SSE).
+**Backend** (`backend/greengag/`, FastAPI + async)
+- `greengag/models/schemas.py` — Pydantic `AuditPayload` contract (single source of truth).
+- `greengag/config.py` — `os.getenv()` bindings + startup validation.
+- `greengag/agents/` — 5 async agents + LangGraph orchestrator.
+- `greengag/scoring/integrity.py` — Weighted Integrity Index (geospatial = 50%, veto).
+- `greengag/api/routes/` — `GET /api/health`, `POST /api/audit`, `GET /api/audit/stream` (SSE).
 
-**Frontend** (`frontend/`, React + TypeScript + Vite)
-- 7 components: `RiskScoreRing`, `AgentSwimlane`, `PDFViewer`, `LedgerTimeline`,
-  `DiscrepancyCanvas`, `MapCanvas`, `SentimentFeed`.
-- Design system per CLAUDE.md: eggshell/cream backgrounds, navy/charcoal text,
-  sage/slate-blue/terra-cotta accents, 12–16px radii, 150ms fades, cascade
-  slide. **No dark theme.**
-- XAI lineage: clicking a discrepancy (or a flagged ledger row / PDF claim)
-  draws an **animated SVG anchor line** and co-highlights the linked evidence
-  across cards.
-- Live agent transitions stream from the backend SSE endpoint; if the backend
-  is down, the dashboard replays the audit locally from the mock fixture.
+**Frontend** (`frontend/src/`, React + TypeScript + Vite)
+- Wizard flow: Upload → Claims → Evidence → Dashboard.
+- `components/audit/` — XAI surfaces (PDF, ledger, map, discrepancy canvas, …).
+- `components/wizard/` — step views; `components/layout/` — sidebar stepper.
 
 ---
 
@@ -49,7 +38,7 @@ cd backend
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp ../.env.example ../.env     # optional; mock mode runs without keys
-uvicorn main:app --reload      # http://localhost:8000
+uvicorn greengag.main:app --reload      # http://localhost:8000
 ```
 
 Sanity check:
@@ -77,7 +66,7 @@ the cascade. With the backend stopped, it falls back to the local mock.
 
 `GREENGAG_DATA_MODE` (in `.env`, default `mock`):
 
-- `mock` — agents return deterministic fixtures (`backend/mocks/fixtures.py`,
+- `mock` — agents return deterministic fixtures (`greengag/mocks/fixtures.py`,
   mirrored in `frontend/src/mocks/auditPayload.ts`). No external calls.
 - `live` — agents call real APIs. Each agent's `_run_live()` is stubbed with the
   exact integration TODO; `config.py` requires all 8 secrets at startup.
@@ -90,7 +79,7 @@ Required live keys: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `PLANET_LABS_API_KEY`
 
 ## The contract
 
-Both sides build against one schema. Backend `models/schemas.py::AuditPayload`
+Both sides build against one schema. Backend `greengag/models/schemas.py::AuditPayload`
 and frontend `src/types/audit.ts::AuditPayload` are kept in lockstep — the SSE
 stream deserializes straight into the React components.
 
