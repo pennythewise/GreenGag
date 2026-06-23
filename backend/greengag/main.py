@@ -7,7 +7,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from greengag.api.routes import audit, health
+from greengag.api.routes import audit, documents, health
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,3 +26,4 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
