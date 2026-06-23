@@ -21,6 +21,7 @@ class IngestResponse(BaseModel):
     original_filename: str
     ingest_status: str
     chunk_count: int
+    deduplicated: bool = False
     mode: str
 
 
@@ -90,6 +91,7 @@ async def ingest_document(file: UploadFile = File(...)) -> IngestResponse:
         original_filename=result["original_filename"],
         ingest_status=result["ingest_status"],
         chunk_count=result.get("chunk_count", 0),
+        deduplicated=bool(result.get("deduplicated")),
         mode="live",
     )
 

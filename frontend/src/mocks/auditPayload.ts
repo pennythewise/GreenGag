@@ -66,7 +66,7 @@ export const MOCK_AUDIT: AuditPayload = {
       status: 'SUCCESS',
       risk_contribution: 0.1,
       progress: 1,
-      active_tool: 'pdf_extractor::claude-opus-4-8',
+      active_tool: 'pdf_extractor::gpt-4o',
       rationale_trail: [
         'Loaded ESG report "2025 Sustainability & Net-Zero Pathway" (48 pages).',
         'Stripped promotional cover, foreword, and 11 stock-photo pages.',

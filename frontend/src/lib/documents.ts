@@ -5,6 +5,7 @@ export interface IngestResponse {
   original_filename: string;
   ingest_status: string;
   chunk_count: number;
+  deduplicated?: boolean;
   mode: 'mock' | 'live';
 }
 

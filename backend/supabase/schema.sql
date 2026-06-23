@@ -63,6 +63,7 @@ create table if not exists public.documents (
   id                uuid primary key default gen_random_uuid(),
   storage_path      text not null,
   original_filename text not null,
+  content_hash        text,
   document_title    text,
   reporting_entity  text,
   reporting_year    text,
@@ -81,6 +82,11 @@ create table if not exists public.documents (
 
 create index if not exists documents_ingest_status_idx on public.documents (ingest_status);
 create index if not exists documents_extract_status_idx on public.documents (extract_status);
+
+-- One ready ingest per PDF bytes + embedding config (content-hash dedup)
+create unique index if not exists documents_dedup_idx
+  on public.documents (content_hash, embedding_model, embedding_dims)
+  where ingest_status = 'ready' and content_hash is not null;
 
 -- ── Document chunks (RAG store) ─────────────────────────────────────────────
 -- vector(2000) = text-embedding-3-large + OpenAI API dimensions=2000
@@ -344,3 +350,11 @@ select
 from public.documents d
 left join public.claims c on c.document_id = d.id
 group by d.id;
+
+-- ── Migration: content-hash dedup (safe to re-run on existing projects) ─────
+alter table public.documents add column if not exists content_hash text;
+
+drop index if exists public.documents_dedup_idx;
+create unique index if not exists documents_dedup_idx
+  on public.documents (content_hash, embedding_model, embedding_dims)
+  where ingest_status = 'ready' and content_hash is not null;

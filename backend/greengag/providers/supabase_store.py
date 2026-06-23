@@ -9,6 +9,24 @@ from supabase import Client, create_client
 from greengag.config import settings
 
 
+def _response_rows(resp: Any) -> list[dict[str, Any]]:
+    if resp is None:
+        return []
+    data = getattr(resp, "data", None)
+    if data is None:
+        return []
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return [data]
+    return []
+
+
+def _first_row(resp: Any) -> dict[str, Any] | None:
+    rows = _response_rows(resp)
+    return rows[0] if rows else None
+
+
 def get_supabase() -> Client:
     if not settings.supabase_url or not settings.supabase_service_key:
         raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.")
@@ -26,18 +44,42 @@ class SupabaseStore:
         *,
         storage_path: str,
         original_filename: str,
+        content_hash: str,
         embedding_model: str,
         embedding_dims: int,
     ) -> dict[str, Any]:
         row = {
             "storage_path": storage_path,
             "original_filename": original_filename,
+            "content_hash": content_hash,
             "ingest_status": "pending",
             "embedding_model": embedding_model,
             "embedding_dims": embedding_dims,
         }
         resp = self.client.table("documents").insert(row).execute()
-        return resp.data[0]
+        row = _first_row(resp)
+        if row is None:
+            raise RuntimeError("Supabase insert(document) returned no data.")
+        return row
+
+    def find_ready_by_hash(
+        self,
+        content_hash: str,
+        embedding_model: str,
+        embedding_dims: int,
+    ) -> dict[str, Any] | None:
+        resp = (
+            self.client.table("documents")
+            .select("*")
+            .eq("content_hash", content_hash)
+            .eq("embedding_model", embedding_model)
+            .eq("embedding_dims", embedding_dims)
+            .eq("ingest_status", "ready")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        return _first_row(resp)
 
     def update_document(self, document_id: str, **fields: Any) -> dict[str, Any]:
         resp = (
@@ -46,17 +88,20 @@ class SupabaseStore:
             .eq("id", document_id)
             .execute()
         )
-        return resp.data[0]
+        row = _first_row(resp)
+        if row is None:
+            raise RuntimeError(f"Supabase update(document {document_id}) returned no data.")
+        return row
 
     def get_document(self, document_id: str) -> dict[str, Any] | None:
         resp = (
             self.client.table("documents")
             .select("*")
             .eq("id", document_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        return resp.data
+        return _first_row(resp)
 
     def upload_pdf(self, storage_path: str, pdf_bytes: bytes) -> None:
         self.client.storage.from_(self.BUCKET).upload(
@@ -95,7 +140,7 @@ class SupabaseStore:
                 "p_match_count": match_count,
             },
         ).execute()
-        return resp.data or []
+        return _response_rows(resp)
 
     def list_chunks(self, document_id: str) -> list[dict[str, Any]]:
         resp = (
@@ -105,11 +150,14 @@ class SupabaseStore:
             .order("chunk_index")
             .execute()
         )
-        return resp.data or []
+        return _response_rows(resp)
 
     def insert_extraction_run(self, row: dict[str, Any]) -> dict[str, Any]:
         resp = self.client.table("extraction_runs").insert(row).execute()
-        return resp.data[0]
+        row = _first_row(resp)
+        if row is None:
+            raise RuntimeError("Supabase insert(extraction_run) returned no data.")
+        return row
 
     def delete_claims(self, document_id: str) -> None:
         self.client.table("claims").delete().eq("document_id", document_id).execute()
@@ -125,4 +173,4 @@ class SupabaseStore:
             .eq("document_id", document_id)
             .execute()
         )
-        return resp.data or []
+        return _response_rows(resp)
