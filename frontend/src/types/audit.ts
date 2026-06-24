@@ -57,14 +57,31 @@ export interface HighlightBox {
   h: number;
 }
 
+export type EsgPillar = 'environment' | 'social' | 'governance';
+
 export interface ExtractedClaim {
   id: string;
   label: string;
   raw_text: string;
+  pillar?: EsgPillar;
+  category?: string;
+  claim_type?: string;
+  entity?: string;
+  metric?: string;
+  target_value?: string;
+  achieved_value?: string;
+  baseline_value?: string;
+  time_period?: string;
+  location?: string;
+  unit?: string;
+  page?: number;
+  section_heading?: string;
+  key_metrics?: Record<string, string | number | boolean | null>;
+  confidence?: number;
   claimed_reduction_pct?: number;
   material_class?: string;
   stated_spend_usd?: number;
-  highlight: HighlightBox;
+  highlight?: HighlightBox;
 }
 
 export interface PdfBlock {
@@ -81,10 +98,10 @@ export interface PdfPage {
 }
 
 export interface ReportParserState extends BaseAgentState {
-  document: {
+  document?: {
     title: string;
     pages: PdfPage[];
-  };
+  } | null;
   extracted_claims: ExtractedClaim[];
 }
 
