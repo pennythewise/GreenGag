@@ -32,7 +32,8 @@ function structuredFields(claim: ExtractedClaim, meta: AuditMeta) {
     fields.push({ k: 'stated_spend', v: fmtUSD(claim.stated_spend_usd) });
   if (claim.confidence != null)
     fields.push({ k: 'confidence', v: `${Math.round(claim.confidence * 100)}%` });
-  fields.push({ k: 'project', v: claim.location ?? meta.project_name });
+  const location = claim.location?.trim();
+  if (location) fields.push({ k: 'project', v: location });
   return fields;
 }
 
