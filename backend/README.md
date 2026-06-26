@@ -45,7 +45,7 @@ uvicorn greengag.main:app --reload --port 8000
 
 ## Report Parser pipeline (live)
 
-1. **Ingest** — PDF uploaded to Supabase Storage; page-aware chunks with `pillar_hint`; OpenAI `text-embedding-3-large` at `dimensions=2000`; vectors stored in `document_chunks`. **Duplicate PDFs** (same SHA-256 bytes + embedding model/dims) return the existing ready document without re-embedding.
+1. **Ingest** — PDF parsed with **PyMuPDF Layout** (`pymupdf4llm` / `pymupdf_layout`): reading order, markdown tables, section headers; page-aware chunks with `pillar_hint`; OpenAI embeddings at `dimensions=2000`. Duplicate PDFs (same SHA-256 + embedding config) skip re-embedding.
 2. **Extract** — Per-pillar fixed queries → top-8 vector search → hybrid `pillar_hint` boost → 0.55 threshold → 15–20 chunks to OpenAI with taxonomy prompt → Pydantic validate + 1 retry → claims persisted.
 
 Requires: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, and `backend/supabase/schema.sql` applied in Supabase.

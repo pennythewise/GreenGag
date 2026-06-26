@@ -12,6 +12,6 @@ langgraph>=0.2.0
 anthropic>=0.39.0
 openai>=1.54.0
 
-# PDF + Supabase
-pymupdf>=1.24.0
+# PDF (layout-aware via pymupdf4llm + pymupdf_layout) + Supabase
+pymupdf4llm==1.27.2.3
 supabase>=2.10.0

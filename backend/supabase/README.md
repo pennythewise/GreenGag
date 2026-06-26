@@ -37,6 +37,8 @@ Create a project at [supabase.com](https://supabase.com).
 1. Run [`reset.sql`](./reset.sql)
 2. Run [`schema.sql`](./schema.sql)
 
+**Existing project (add content-hash dedup):** re-run the migration block at the bottom of [`schema.sql`](./schema.sql) in SQL Editor (safe to re-run).
+
 ## 3. Environment variables
 
 Copy to repo root `.env`:
