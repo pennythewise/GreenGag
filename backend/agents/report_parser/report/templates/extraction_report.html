@@ -27,8 +27,6 @@
       <dt>Reporting year</dt>
       <dd>{{ document.reporting_year }}</dd>
       {% endif %}
-      <dt>Generated</dt>
-      <dd>{{ generated_at }}</dd>
     </dl>
   </section>
 
@@ -64,13 +62,36 @@
     {% endif %}
   </section>
 
-  <section class="insights">
-    <h2>Rule-based insights</h2>
-    <ul>
-      {% for item in insights %}
-      <li>{{ item }}</li>
-      {% endfor %}
-    </ul>
+  <section class="claims-overview">
+    <h2>Claims overview</h2>
+    {% if claim_overview %}
+    <table class="claims-table">
+      <thead>
+        <tr>
+          <th>Pillar</th>
+          <th>Category</th>
+          <th>Claim</th>
+          <th>Baseline value</th>
+          <th>Target value</th>
+          <th>Time period</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in claim_overview %}
+        <tr>
+          <td>{{ item.pillar }}</td>
+          <td>{{ item.category }}</td>
+          <td>{{ item.claim }}</td>
+          <td>{{ item.baseline_value }}</td>
+          <td>{{ item.target_value }}</td>
+          <td>{{ item.time_period }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No claims were extracted from this document.</p>
+    {% endif %}
   </section>
 
   <section class="claims-section">

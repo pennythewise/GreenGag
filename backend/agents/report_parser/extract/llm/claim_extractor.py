@@ -9,7 +9,7 @@ from pathlib import Path
 from openai import AsyncOpenAI
 from pydantic import ValidationError
 
-from ..llm.models import ExtractionResponse, RetrievedChunk
+from ..llm.models import ClaimCandidate, ExtractionResponse, RetrievedChunk
 from ..rag.pillar_queries import PILLARS
 from config import settings
 from models.schemas import EsgPillar
@@ -40,6 +40,20 @@ def _format_chunks(chunks: list[RetrievedChunk]) -> str:
     return "\n".join(parts)
 
 
+def _format_candidates(candidates: list[ClaimCandidate]) -> str:
+    parts: list[str] = []
+    for candidate in candidates:
+        parts.append(
+            f"--- CANDIDATE {candidate.id} ---\n"
+            f"pillar: {candidate.pillar}\n"
+            f"page: {candidate.page}\n"
+            f"section: {candidate.section_heading or 'N/A'}\n"
+            f"routing_score: {candidate.routing_score:.4f}\n"
+            f"raw_text: {candidate.raw_text}\n"
+        )
+    return "\n".join(parts)
+
+
 class ClaimExtractor:
     def __init__(self) -> None:
         if not settings.openai_api_key:
@@ -65,6 +79,25 @@ class ClaimExtractor:
             f"Retrieved report excerpts ({len(chunks)} chunks, routed to {pillar}):\n\n"
             f"{_format_chunks(chunks)}\n\n"
             "Extract all verifiable measurable ESG claims from the excerpts above. "
+            "Return ONLY valid JSON matching the schema in the system prompt."
+        )
+
+        return await self._call_llm(user_content)
+
+    async def normalize_candidates_for_pillar(
+        self,
+        *,
+        filename: str,
+        pillar: EsgPillar,
+        candidates: list[ClaimCandidate],
+    ) -> ExtractionResponse:
+        user_content = (
+            f"Document filename: {filename}\n\n"
+            f"The deterministic NLP layer found {len(candidates)} measurable "
+            f"{pillar} claim candidate(s). Normalize these candidates only.\n"
+            "Return exactly one claim object per candidate. Do not add claims that "
+            "are not listed. Preserve each candidate `id` and `raw_text` exactly.\n\n"
+            f"{_format_candidates(candidates)}\n\n"
             "Return ONLY valid JSON matching the schema in the system prompt."
         )
 

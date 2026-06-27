@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .llm.claim_candidates import candidates_for_pillar, fallback_claim_from_candidate
 from .llm.claim_extractor import ClaimExtractor
 from .llm.claim_rules import validate_claim_for_pillar
 from .llm.models import (
@@ -22,6 +23,7 @@ from models.schemas import (
     HighlightBox,
     PdfBlock,
     PdfDocument,
+    PdfPage,
     ReportParserState,
 )
 
@@ -66,11 +68,19 @@ class ExtractPipeline:
                         )
                     continue
 
-                part = await self.extractor.extract_for_pillar(
+                candidates = candidates_for_pillar(pillar, chunks)
+                if not candidates:
+                    status.claims_extracted = 0
+                    extraction.extraction_notes.append(
+                        f"{pillar}: {status.chunks_selected} chunk(s) retrieved "
+                        "but no deterministic measurable sentence candidates matched."
+                    )
+                    continue
+
+                part = await self.extractor.normalize_candidates_for_pillar(
                     filename=doc["original_filename"],
                     pillar=pillar,
-                    chunks=chunks,
-                    pillar_status={pillar: status.model_dump()},
+                    candidates=candidates,
                 )
 
                 if not extraction.document_title and part.document_title:
@@ -83,8 +93,25 @@ class ExtractPipeline:
 
                 routing_scores = _aggregate_routing_scores(chunks)
                 pillar_claim_count = 0
+                candidates_by_id = {c.id: c for c in candidates}
+                candidates_by_text = {_normalize_raw(c.raw_text): c for c in candidates}
+                accepted_candidate_ids: set[str] = set()
 
                 for raw in part.claims:
+                    candidate = candidates_by_id.get(raw.id) or candidates_by_text.get(
+                        _normalize_raw(raw.raw_text)
+                    )
+                    if not candidate:
+                        extraction.extraction_notes.append(
+                            f"Rejected claim {raw.id}: not produced by deterministic NLP candidates."
+                        )
+                        continue
+
+                    raw.id = candidate.id
+                    raw.raw_text = candidate.raw_text
+                    raw.page = raw.page or candidate.page
+                    raw.section_heading = raw.section_heading or candidate.section_heading
+
                     if raw.confidence is not None and raw.confidence < 0.3:
                         extraction.extraction_notes.append(
                             f"Skipped low-confidence claim {raw.id} ({raw.confidence})."
@@ -107,16 +134,29 @@ class ExtractPipeline:
                         raw.id = _scoped_claim_id(pillar, raw.id)
                         claims.append(llm_claim_to_extracted(raw))
                         pillar_claim_count += 1
+                        accepted_candidate_ids.add(candidate.id)
                     else:
                         raw.id = _scoped_claim_id(raw.pillar, raw.id)
                         claims.append(llm_claim_to_extracted(raw))
                         pillar_claim_count += 1
+                        accepted_candidate_ids.add(candidate.id)
                         extraction.extraction_notes.append(
                             f"Kept claim {raw.id} under pillar '{raw.pillar}' "
                             f"(extract context '{pillar}', routing score "
                             f"{routing_scores.get(raw.pillar, 0.0):.2f} > "
                             f"{settings.pillar_routing_confidence_floor})."
                         )
+
+                for candidate in candidates:
+                    if candidate.id in accepted_candidate_ids:
+                        continue
+                    raw = fallback_claim_from_candidate(candidate)
+                    claims.append(llm_claim_to_extracted(raw))
+                    pillar_claim_count += 1
+                    extraction.extraction_notes.append(
+                        f"Added deterministic fallback claim {candidate.id}: "
+                        "LLM did not return this NLP candidate."
+                    )
 
                 status.claims_extracted = pillar_claim_count
                 if pillar_claim_count == 0 and status.chunks_selected > 0:
@@ -125,6 +165,9 @@ class ExtractPipeline:
                         f"(best MiniLM score {status.best_score:.2f}) but no measurable "
                         f"claims passed validation — not inferred as absent from report."
                     )
+
+            claims = _dedupe_claims_by_raw_text(claims)
+            _recount_pillar_status(pillar_status, claims)
 
             run_row = self.store.insert_extraction_run(
                 {
@@ -193,6 +236,33 @@ def _aggregate_routing_scores(
         for pillar, score in chunk.pillar_scores.items():
             scores[pillar] = max(scores[pillar], score)
     return scores
+
+
+def _normalize_raw(raw_text: str) -> str:
+    return " ".join(raw_text.lower().split()).strip(" \"'“”.,;:")
+
+
+def _dedupe_claims_by_raw_text(claims: list[ExtractedClaim]) -> list[ExtractedClaim]:
+    seen: set[str] = set()
+    out: list[ExtractedClaim] = []
+    for claim in claims:
+        key = _normalize_raw(claim.raw_text)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(claim)
+    return out
+
+
+def _recount_pillar_status(
+    pillar_status: dict[EsgPillar, PillarRetrievalStatus],
+    claims: list[ExtractedClaim],
+) -> None:
+    for status in pillar_status.values():
+        status.claims_extracted = 0
+    for claim in claims:
+        if claim.pillar in pillar_status:
+            pillar_status[claim.pillar].claims_extracted += 1
 
 
 def _scoped_claim_id(pillar: EsgPillar, claim_id: str) -> str:

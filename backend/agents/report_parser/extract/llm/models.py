@@ -39,6 +39,16 @@ class ExtractionResponse(BaseModel):
     extraction_notes: list[str] = Field(default_factory=list)
 
 
+class ClaimCandidate(BaseModel):
+    id: str
+    pillar: EsgPillar
+    raw_text: str
+    page: int | None = None
+    section_heading: str | None = None
+    chunk_id: str
+    routing_score: float
+
+
 class PillarRetrievalStatus(BaseModel):
     status: Literal["ok", "insufficient_text_retrieved"]
     best_score: float

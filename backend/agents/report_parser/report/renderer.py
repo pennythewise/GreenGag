@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +12,6 @@ from ..store.document_store import DocumentStore
 from .insights import (
     DISCLAIMER,
     build_conclusion,
-    build_insights,
 )
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -49,8 +47,6 @@ def _claim_to_view(claim: ExtractedClaim | dict[str, Any]) -> dict[str, Any]:
         fields.append({"key": "unit", "value": str(data["unit"])})
     if data.get("page") is not None:
         fields.append({"key": "page", "value": f"p.{data['page']}"})
-    if data.get("section_heading"):
-        fields.append({"key": "section", "value": str(data["section_heading"])})
     conf = data.get("confidence")
     if conf is not None:
         fields.append({"key": "confidence", "value": f"{round(float(conf) * 100)}%"})
@@ -61,6 +57,17 @@ def _claim_to_view(claim: ExtractedClaim | dict[str, Any]) -> dict[str, Any]:
         "raw_text": data.get("raw_text", ""),
         "pillar": data.get("pillar"),
         "fields": fields,
+    }
+
+
+def _claim_overview_to_view(claim: dict[str, Any]) -> dict[str, str]:
+    return {
+        "pillar": str(claim.get("pillar") or "—"),
+        "category": str(claim.get("category") or "—"),
+        "claim": str(claim.get("label") or claim.get("raw_text") or "—"),
+        "baseline_value": str(claim.get("baseline_value") or "—"),
+        "target_value": str(claim.get("target_value") or "—"),
+        "time_period": str(claim.get("time_period") or "—"),
     }
 
 
@@ -119,10 +126,9 @@ def _assemble_context(
     summary = _summary_stats(claims)
     return {
         "report_title": "GreenGag ESG Extraction Report",
-        "generated_at": datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M UTC"),
         "document": document,
         "summary": summary,
-        "insights": build_insights(claims, extraction_notes, pillar_status),
+        "claim_overview": [_claim_overview_to_view(c) for c in claims],
         "claims": [_claim_to_view(c) for c in claims],
         "conclusion": build_conclusion(summary["total_claims"]),
         "disclaimer": DISCLAIMER,

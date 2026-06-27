@@ -134,16 +134,6 @@ h2 {
   color: #5b8a72;
 }
 
-.insights ul {
-  margin: 0;
-  padding-left: 5mm;
-}
-
-.insights li {
-  margin-bottom: 2.5mm;
-  color: #3d5166;
-}
-
 .claim-card {
   break-inside: avoid;
   page-break-inside: avoid;
@@ -204,6 +194,48 @@ h2 {
 .claim-field__val {
   font-size: 9.5pt;
   color: #1e2a3a;
+}
+
+.claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #d8e0d8;
+  border-radius: 3mm;
+  overflow: hidden;
+  font-size: 8.5pt;
+}
+
+.claims-table th,
+.claims-table td {
+  border-bottom: 1px solid #d8e0d8;
+  padding: 2.5mm 2mm;
+  text-align: left;
+  vertical-align: top;
+}
+
+.claims-table th {
+  background: #e8f0ea;
+  color: #2f5d4a;
+  font-size: 7.5pt;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.claims-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.claims-table td:nth-child(1),
+.claims-table td:nth-child(4),
+.claims-table td:nth-child(5),
+.claims-table td:nth-child(6) {
+  white-space: nowrap;
+}
+
+.claims-table td:nth-child(3) {
+  width: 30%;
 }
 
 .conclusion {
