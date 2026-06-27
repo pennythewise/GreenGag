@@ -1,4 +1,4 @@
-import { ArrowRight, CircleDot, Circle, AlertTriangle } from 'lucide-react';
+import { ArrowRight, CircleDot, Circle, AlertTriangle, FileDown } from 'lucide-react';
 import type { AuditMeta, ExtractedClaim, ReportParserState } from '../../types/audit';
 import { useSelection } from '../../lib/selection';
 import { fmtUSD } from '../../lib/format';
@@ -15,6 +15,8 @@ interface Props {
   error?: string | null;
   documentId?: string | null;
   onRetryExtract?: () => void;
+  onGenerateReport?: () => void;
+  reportBusy?: boolean;
 }
 
 /** Builds the structured claim-object fields shown in the inspector panel. */
@@ -46,6 +48,8 @@ export function ClaimsView({
   busy,
   error,
   onRetryExtract,
+  onGenerateReport,
+  reportBusy,
 }: Props) {
   const { setActiveClaim } = useSelection();
   const claims = parser.extracted_claims;
@@ -62,10 +66,22 @@ export function ClaimsView({
             each into a structured object. Select one claim to triangulate.
           </p>
         </div>
-        <button className="wz-btn wz-btn--primary" disabled={!selected} onClick={onProceed}>
-          Triangulate evidence
-          <ArrowRight size={16} />
-        </button>
+        <div className="wz__head-actions">
+          {onGenerateReport && (
+            <button
+              className="wz-btn wz-btn--ghost"
+              disabled={reportBusy || claims.length === 0}
+              onClick={onGenerateReport}
+            >
+              <FileDown size={16} />
+              {reportBusy ? 'Generating…' : 'Generate extraction report'}
+            </button>
+          )}
+          <button className="wz-btn wz-btn--primary" disabled={!selected} onClick={onProceed}>
+            Triangulate evidence
+            <ArrowRight size={16} />
+          </button>
+        </div>
       </header>
 
       {busy && (

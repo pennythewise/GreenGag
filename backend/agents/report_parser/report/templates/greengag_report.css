@@ -1,0 +1,227 @@
+@page {
+  size: A4;
+  margin: 22mm 18mm 24mm 18mm;
+
+  @bottom-center {
+    content: "GreenGag · ESG Extraction Report · Page " counter(page);
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 8pt;
+    color: #6b7a8a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #1e2a3a;
+  background: #faf7ef;
+  margin: 0;
+}
+
+.cover {
+  page-break-after: always;
+  min-height: 240mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12mm 0;
+}
+
+.cover__brand {
+  font-size: 11pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5b8a72;
+  font-weight: 600;
+  margin-bottom: 8mm;
+}
+
+.cover__title {
+  font-size: 28pt;
+  font-weight: 700;
+  color: #1e2a3a;
+  margin: 0 0 4mm;
+  line-height: 1.15;
+}
+
+.cover__subtitle {
+  font-size: 13pt;
+  color: #3d5166;
+  margin: 0 0 14mm;
+}
+
+.cover__meta {
+  border-left: 4px solid #5b8a72;
+  padding-left: 5mm;
+  margin-top: 6mm;
+}
+
+.cover__meta dt {
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7a8a;
+  margin: 0 0 1mm;
+}
+
+.cover__meta dd {
+  margin: 0 0 4mm;
+  font-size: 11pt;
+  color: #1e2a3a;
+}
+
+section {
+  margin-bottom: 10mm;
+}
+
+h2 {
+  font-size: 14pt;
+  color: #1e2a3a;
+  border-bottom: 2px solid #5b8a72;
+  padding-bottom: 2mm;
+  margin: 0 0 5mm;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4mm;
+  margin-bottom: 6mm;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #d8e0d8;
+  border-radius: 4mm;
+  padding: 4mm;
+  text-align: center;
+}
+
+.stat-card__value {
+  font-size: 18pt;
+  font-weight: 700;
+  color: #5b8a72;
+}
+
+.stat-card__label {
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7a8a;
+}
+
+.pillar-row {
+  display: flex;
+  gap: 3mm;
+  margin-bottom: 4mm;
+}
+
+.pillar-chip {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #d8e0d8;
+  border-radius: 3mm;
+  padding: 3mm 4mm;
+  font-size: 9.5pt;
+}
+
+.pillar-chip strong {
+  color: #5b8a72;
+}
+
+.insights ul {
+  margin: 0;
+  padding-left: 5mm;
+}
+
+.insights li {
+  margin-bottom: 2.5mm;
+  color: #3d5166;
+}
+
+.claim-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  background: #fff;
+  border: 1px solid #d8e0d8;
+  border-left: 4px solid #c47a5a;
+  border-radius: 3mm;
+  padding: 5mm 6mm;
+  margin-bottom: 5mm;
+}
+
+.claim-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 3mm;
+}
+
+.claim-card__label {
+  font-size: 11pt;
+  font-weight: 600;
+  color: #1e2a3a;
+  margin: 0;
+}
+
+.claim-card__pillar {
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #e8f0ea;
+  color: #5b8a72;
+  padding: 1mm 3mm;
+  border-radius: 2mm;
+}
+
+.claim-card__quote {
+  font-style: italic;
+  color: #3d5166;
+  border-left: 3px solid #d8e0d8;
+  padding-left: 4mm;
+  margin: 0 0 4mm;
+  font-size: 10pt;
+}
+
+.claim-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2mm 6mm;
+}
+
+.claim-field__key {
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7a8a;
+}
+
+.claim-field__val {
+  font-size: 9.5pt;
+  color: #1e2a3a;
+}
+
+.conclusion {
+  background: #fff;
+  border: 1px solid #d8e0d8;
+  border-radius: 4mm;
+  padding: 5mm 6mm;
+}
+
+.disclaimer {
+  margin-top: 8mm;
+  padding-top: 4mm;
+  border-top: 1px solid #d8e0d8;
+  font-size: 8.5pt;
+  color: #6b7a8a;
+  font-style: italic;
+}
+
+.claims-section {
+  page-break-before: auto;
+}

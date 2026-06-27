@@ -11,7 +11,12 @@ langgraph>=0.2.0
 # LLM + embeddings
 anthropic>=0.39.0
 openai>=1.54.0
+sentence-transformers>=3.0.0
 
 # PDF (layout-aware via pymupdf4llm + pymupdf_layout) + Supabase
 pymupdf4llm==1.27.2.3
 supabase>=2.10.0
+
+# Extraction report PDF
+jinja2>=3.1.0
+weasyprint>=62.0

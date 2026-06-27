@@ -1,0 +1,21 @@
+<article class="claim-card">
+  <div class="claim-card__header">
+    <h3 class="claim-card__label">{{ claim.label }}</h3>
+    {% if claim.pillar %}
+    <span class="claim-card__pillar">{{ claim.pillar }}</span>
+    {% endif %}
+  </div>
+  {% if claim.raw_text %}
+  <blockquote class="claim-card__quote">“{{ claim.raw_text }}”</blockquote>
+  {% endif %}
+  {% if claim.fields %}
+  <div class="claim-fields">
+    {% for field in claim.fields %}
+    <div class="claim-field">
+      <div class="claim-field__key">{{ field.key }}</div>
+      <div class="claim-field__val">{{ field.value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</article>

@@ -23,14 +23,14 @@ GreenGag is a high-stakes multi-agent greenwashing detection platform. It audits
 
 ```
 GreenGag/
-├── backend/                     # Python FastAPI package (see backend/README.md)
-│   └── greengag/
-│       ├── main.py
-│       ├── api/routes/
-│       ├── agents/
-│       ├── models/
-│       ├── mocks/
-│       └── scoring/
+├── backend/                     # Python FastAPI app (see backend/README.md)
+│   ├── main.py
+│   ├── api/routes/
+│   ├── agents/
+│   │   └── report_parser/     # ingest, extract, report, store, prompts
+│   ├── models/
+│   ├── mocks/
+│   └── scoring/
 ├── frontend/                    # React wizard dashboard (see frontend/README.md)
 │   └── src/
 │       ├── app/
@@ -86,11 +86,11 @@ class AuditPayload(BaseModel):
 ## Commands
 
 ```bash
-# Backend
+# Backend (from backend/)
 cd backend
 pip install -r requirements.txt
-cp ../.env.example ../.env   # then fill in keys
-uvicorn greengag.main:app --reload
+cp ../.env.example ../.env   # repo root .env
+uvicorn main:app --reload --port 8000
 
 # Frontend
 cd frontend

@@ -6,6 +6,7 @@ import {
   extractClaims,
   ingestDocument,
   ingestSampleReport,
+  downloadExtractionReport,
 } from '../lib/documents';
 import type { AuditPayload, ReportParserState } from '../types/audit';
 import { Sidebar } from '../components/layout/Sidebar/Sidebar';
@@ -25,6 +26,8 @@ function Wizard() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [ingestBusy, setIngestBusy] = useState(false);
   const [extractBusy, setExtractBusy] = useState(false);
+  const [extractComplete, setExtractComplete] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
 
   const parser = audit.agent_states.ReportParserAgent;
@@ -50,11 +53,13 @@ function Wizard() {
 
   async function runExtract(docId: string) {
     setExtractBusy(true);
+    setExtractComplete(false);
     setPipelineError(null);
     try {
       const result = await extractClaims(docId);
       applyParserState(result.report_parser);
       if (result.claims.length > 0) setSelectedClaimId(result.claims[0].id);
+      setExtractComplete(true);
     } catch (err) {
       setPipelineError(err instanceof Error ? err.message : 'Extraction failed.');
       throw err;
@@ -75,6 +80,7 @@ function Wizard() {
       if (!ingest) return;
 
       setDocumentId(ingest.document_id);
+      setExtractComplete(false);
       go('claims');
 
       await runExtract(ingest.document_id);
@@ -82,6 +88,19 @@ function Wizard() {
       setPipelineError(err instanceof Error ? err.message : 'Ingest failed.');
     } finally {
       setIngestBusy(false);
+    }
+  }
+
+  async function handleGenerateReport() {
+    if (!documentId) return;
+    setReportBusy(true);
+    setPipelineError(null);
+    try {
+      await downloadExtractionReport(documentId);
+    } catch (err) {
+      setPipelineError(err instanceof Error ? err.message : 'Report generation failed.');
+    } finally {
+      setReportBusy(false);
     }
   }
 
@@ -96,6 +115,7 @@ function Wizard() {
     setActiveDiscrepancy(null);
     setSelectedClaimId(null);
     setDocumentId(null);
+    setExtractComplete(false);
     setPipelineError(null);
     setReached('upload');
     setStep('upload');
@@ -129,6 +149,12 @@ function Wizard() {
               onRetryExtract={
                 documentId ? () => void runExtract(documentId) : undefined
               }
+              onGenerateReport={
+                documentId && extractComplete
+                  ? () => void handleGenerateReport()
+                  : undefined
+              }
+              reportBusy={reportBusy}
             />
           )}
 

@@ -43,6 +43,23 @@ export async function extractClaims(documentId: string): Promise<ExtractResponse
   return res.json();
 }
 
+export async function downloadExtractionReport(documentId: string): Promise<void> {
+  const res = await fetch(`/api/documents/${documentId}/report/pdf`, { method: 'POST' });
+  if (!res.ok) throw new Error(await parseError(res));
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match?.[1] ?? `GreenGag-extraction-${documentId}.pdf`;
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Sample shortcut — backend returns deterministic mock fixture data. */
 export async function ingestSampleReport(): Promise<IngestResponse> {
   return {
