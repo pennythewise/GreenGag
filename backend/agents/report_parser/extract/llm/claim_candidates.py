@@ -8,10 +8,14 @@ from __future__ import annotations
 import hashlib
 import re
 
+import numpy as np
+
 from models.schemas import EsgPillar
+from providers.local_embedder import encode_texts
 
 from .claim_rules import extract_units, matches_claim_regex
 from .models import ClaimCandidate, LlmClaim, RetrievedChunk
+from ..rag.pillar_queries import PILLAR_QUERIES, PILLARS
 
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[\"'“”A-Z0-9])")
 WHITESPACE_RE = re.compile(r"\s+")
@@ -19,14 +23,35 @@ FISCAL_YEAR_RE = re.compile(r"\bFY\s?\d{2,4}\b", re.IGNORECASE)
 TARGET_RE = re.compile(r"\bby\s+(FY\s?\d{2,4}|20\d{2})\b", re.IGNORECASE)
 PERCENT_RE = re.compile(r"\b\d+(?:[.,]\d+)?\s*%")
 
+SENTENCE_PILLAR_PROTOTYPES: dict[EsgPillar, tuple[str, ...]] = {
+    "environment": (
+        PILLAR_QUERIES["environment"],
+        "renewable electricity energy consumption offices data centers percent target",
+        "scope 1 scope 2 greenhouse gas emissions reduction target net zero climate",
+        "water waste recycling landfill biodiversity environmental controls",
+    ),
+    "social": (
+        PILLAR_QUERIES["social"],
+        "supplier audits forced labor human rights VAP strategic suppliers labor standards",
+        "employee safety injuries fatalities training workforce diversity gender",
+        "community investment scholarships students local employment social impact",
+    ),
+    "governance": (
+        PILLAR_QUERIES["governance"],
+        "board oversight independent directors ESG committee governance accountability",
+        "anti corruption ethics compliance whistleblower policy risk management",
+        "ESG assurance disclosure quality materiality assessment reporting standards",
+    ),
+}
+
 
 def candidates_for_pillar(
     pillar: EsgPillar,
     chunks: list[RetrievedChunk],
 ) -> list[ClaimCandidate]:
-    """Return stable candidates in source order, de-duped by text."""
+    """Return stable candidates classified to the pillar by MiniLM."""
     seen: set[str] = set()
-    candidates: list[ClaimCandidate] = []
+    raw_candidates: list[tuple[str, str, RetrievedChunk]] = []
 
     for chunk in chunks:
         for sentence in _sentences(chunk.content):
@@ -34,23 +59,33 @@ def candidates_for_pillar(
             key = _normalize_key(raw_text)
             if not key or key in seen or not matches_claim_regex(raw_text):
                 continue
-            keyword_pillar = _keyword_pillar(raw_text)
-            if keyword_pillar and keyword_pillar != pillar:
-                continue
 
             seen.add(key)
-            candidate_id = f"{pillar}-{hashlib.sha1(key.encode()).hexdigest()[:10]}"
-            candidates.append(
-                ClaimCandidate(
-                    id=candidate_id,
-                    pillar=pillar,
-                    raw_text=raw_text,
-                    page=chunk.page,
-                    section_heading=chunk.section_heading,
-                    chunk_id=chunk.id,
-                    routing_score=chunk.pillar_scores.get(pillar, chunk.vector_score),
-                )
+            raw_candidates.append((key, raw_text, chunk))
+
+    if not raw_candidates:
+        return []
+
+    sentence_scores = _score_sentence_pillars([raw for _, raw, _ in raw_candidates])
+    candidates: list[ClaimCandidate] = []
+
+    for (key, raw_text, chunk), pillar_scores in zip(raw_candidates, sentence_scores):
+        matched_pillar = max(pillar_scores, key=pillar_scores.get)
+        if matched_pillar != pillar:
+            continue
+
+        candidate_id = f"{pillar}-{hashlib.sha1(key.encode()).hexdigest()[:10]}"
+        candidates.append(
+            ClaimCandidate(
+                id=candidate_id,
+                pillar=pillar,
+                raw_text=raw_text,
+                page=chunk.page,
+                section_heading=chunk.section_heading,
+                chunk_id=chunk.id,
+                routing_score=pillar_scores[pillar],
             )
+        )
 
     return candidates
 
@@ -88,6 +123,41 @@ def _normalize_key(text: str) -> str:
     return WHITESPACE_RE.sub(" ", text.lower()).strip(" \"'“”.,;:")
 
 
+def _score_sentence_pillars(sentences: list[str]) -> list[dict[EsgPillar, float]]:
+    query_texts = [
+        prototype
+        for pillar in PILLARS
+        for prototype in SENTENCE_PILLAR_PROTOTYPES[pillar]
+    ]
+    vectors = encode_texts([*query_texts, *sentences])
+    query_vectors = vectors[: len(query_texts)]
+    sentence_vectors = vectors[len(query_texts) :]
+
+    prototype_offsets: dict[EsgPillar, range] = {}
+    offset = 0
+    for pillar in PILLARS:
+        count = len(SENTENCE_PILLAR_PROTOTYPES[pillar])
+        prototype_offsets[pillar] = range(offset, offset + count)
+        offset += count
+
+    scored: list[dict[EsgPillar, float]] = []
+    for sentence_vec in sentence_vectors:
+        scored.append(
+            {
+                pillar: max(
+                    _normalized_cosine(query_vectors[idx], sentence_vec)
+                    for idx in prototype_offsets[pillar]
+                )
+                for pillar in PILLARS
+            }
+        )
+    return scored
+
+
+def _normalized_cosine(a: np.ndarray, b: np.ndarray) -> float:
+    return round((float(np.dot(a, b)) + 1.0) / 2.0, 4)
+
+
 def _classify_candidate(pillar: EsgPillar, text: str) -> tuple[str, str, str]:
     lower = text.lower()
 
@@ -122,62 +192,6 @@ def _classify_candidate(pillar: EsgPillar, text: str) -> tuple[str, str, str]:
     if "anti-corruption" in lower or "ethics" in lower or "whistle" in lower:
         return "Business Ethics and Compliance", "anti_corruption", "ethics and compliance"
     return "Governance", "other", "governance metric"
-
-
-def _keyword_pillar(text: str) -> EsgPillar | None:
-    lower = text.lower()
-    if any(
-        word in lower
-        for word in (
-            "renewable",
-            "electricity",
-            "energy",
-            "scope 1",
-            "scope 2",
-            "emission",
-            "ghg",
-            "net zero",
-            "net-zero",
-            "water",
-            "waste",
-            "landfill",
-        )
-    ):
-        return "environment"
-    if any(
-        word in lower
-        for word in (
-            "supplier",
-            "labor",
-            "labour",
-            "vap",
-            "forced labor",
-            "safety",
-            "injur",
-            "fatalit",
-            "women",
-            "diversity",
-            "gender",
-            "training",
-            "employee",
-        )
-    ):
-        return "social"
-    if any(
-        word in lower
-        for word in (
-            "board",
-            "committee",
-            "assurance",
-            "audit committee",
-            "anti-corruption",
-            "ethics",
-            "whistle",
-            "compliance",
-        )
-    ):
-        return "governance"
-    return None
 
 
 def _extract_basic_values(text: str) -> tuple[str | None, str | None, str | None, str | None]:

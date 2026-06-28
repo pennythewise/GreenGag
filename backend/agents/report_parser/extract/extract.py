@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .llm.claim_candidates import candidates_for_pillar, fallback_claim_from_candidate
+from .llm.claim_confidence import deterministic_confidence
 from .llm.claim_extractor import ClaimExtractor
 from .llm.claim_rules import validate_claim_for_pillar
 from .llm.models import (
@@ -107,16 +108,16 @@ class ExtractPipeline:
                         )
                         continue
 
+                    preserved_exact_raw_text = raw.raw_text.strip() == candidate.raw_text.strip()
                     raw.id = candidate.id
                     raw.raw_text = candidate.raw_text
                     raw.page = raw.page or candidate.page
                     raw.section_heading = raw.section_heading or candidate.section_heading
-
-                    if raw.confidence is not None and raw.confidence < 0.3:
-                        extraction.extraction_notes.append(
-                            f"Skipped low-confidence claim {raw.id} ({raw.confidence})."
-                        )
-                        continue
+                    raw.confidence = deterministic_confidence(
+                        candidate=candidate,
+                        claim=raw,
+                        preserved_exact_raw_text=preserved_exact_raw_text,
+                    )
 
                     reject_reason = validate_claim_for_pillar(
                         raw,
@@ -151,6 +152,11 @@ class ExtractPipeline:
                     if candidate.id in accepted_candidate_ids:
                         continue
                     raw = fallback_claim_from_candidate(candidate)
+                    raw.confidence = deterministic_confidence(
+                        candidate=candidate,
+                        claim=raw,
+                        preserved_exact_raw_text=False,
+                    )
                     claims.append(llm_claim_to_extracted(raw))
                     pillar_claim_count += 1
                     extraction.extraction_notes.append(
