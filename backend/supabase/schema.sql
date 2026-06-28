@@ -200,6 +200,55 @@ create table if not exists public.evidence (
 create index if not exists evidence_document_claim_idx
   on public.evidence (document_id, claim_id);
 
+-- ── Weighted verification runs (per selected claim) ──────────────────────────
+create table if not exists public.verification_runs (
+  id                  uuid primary key default gen_random_uuid(),
+  document_id         uuid not null references public.documents (id) on delete cascade,
+  claim_id            text not null,
+  overall_score       numeric(4, 3) not null check (overall_score >= 0 and overall_score <= 1),
+  contradiction_flag  boolean not null default false,
+  rationale_trail     text[] not null default '{}',
+  payload             jsonb not null default '{}'::jsonb,
+  created_at          timestamptz not null default now(),
+
+  constraint verification_runs_claim_fk
+    foreign key (document_id, claim_id)
+    references public.claims (document_id, id)
+    on delete cascade
+);
+
+create index if not exists verification_runs_document_claim_idx
+  on public.verification_runs (document_id, claim_id, created_at desc);
+
+create table if not exists public.verification_layer_scores (
+  id                 uuid primary key default gen_random_uuid(),
+  verification_run_id uuid not null references public.verification_runs (id) on delete cascade,
+  layer_key          text not null,
+  label              text not null,
+  weight             numeric(4, 3) not null check (weight >= 0 and weight <= 1),
+  score              numeric(4, 3) not null check (score >= 0 and score <= 1),
+  weighted_score     numeric(4, 3) not null check (weighted_score >= 0 and weighted_score <= 1),
+  evidence_snippets  text[] not null default '{}',
+  sources            text[] not null default '{}',
+  rationale          text not null,
+  missing_evidence   boolean not null default false,
+  contradiction       boolean not null default false,
+  created_at         timestamptz not null default now(),
+
+  constraint verification_layer_key_check check (
+    layer_key in (
+      'official_report',
+      'financial_statements',
+      'historical_consistency',
+      'methodology',
+      'industry_benchmark'
+    )
+  )
+);
+
+create index if not exists verification_layer_scores_run_idx
+  on public.verification_layer_scores (verification_run_id);
+
 -- ── Media / news cache ────────────────────────────────────────────────────────
 create table if not exists public.media_articles (
   id                  uuid primary key default gen_random_uuid(),
@@ -301,6 +350,8 @@ alter table public.document_chunks enable row level security;
 alter table public.extraction_runs enable row level security;
 alter table public.claims enable row level security;
 alter table public.evidence enable row level security;
+alter table public.verification_runs enable row level security;
+alter table public.verification_layer_scores enable row level security;
 alter table public.media_articles enable row level security;
 
 drop policy if exists "Service role all on documents" on public.documents;
@@ -326,6 +377,16 @@ create policy "Service role all on claims"
 drop policy if exists "Service role all on evidence" on public.evidence;
 create policy "Service role all on evidence"
   on public.evidence for all to service_role
+  using (true) with check (true);
+
+drop policy if exists "Service role all on verification_runs" on public.verification_runs;
+create policy "Service role all on verification_runs"
+  on public.verification_runs for all to service_role
+  using (true) with check (true);
+
+drop policy if exists "Service role all on verification_layer_scores" on public.verification_layer_scores;
+create policy "Service role all on verification_layer_scores"
+  on public.verification_layer_scores for all to service_role
   using (true) with check (true);
 
 drop policy if exists "Service role all on media_articles" on public.media_articles;
@@ -358,3 +419,58 @@ drop index if exists public.documents_dedup_idx;
 create unique index if not exists documents_dedup_idx
   on public.documents (content_hash, embedding_model, embedding_dims)
   where ingest_status = 'ready' and content_hash is not null;
+
+-- ── Migration: weighted verification (safe to re-run on existing projects) ──
+create table if not exists public.verification_runs (
+  id                  uuid primary key default gen_random_uuid(),
+  document_id         uuid not null references public.documents (id) on delete cascade,
+  claim_id            text not null,
+  overall_score       numeric(4, 3) not null check (overall_score >= 0 and overall_score <= 1),
+  contradiction_flag  boolean not null default false,
+  rationale_trail     text[] not null default '{}',
+  payload             jsonb not null default '{}'::jsonb,
+  created_at          timestamptz not null default now(),
+
+  constraint verification_runs_claim_fk
+    foreign key (document_id, claim_id)
+    references public.claims (document_id, id)
+    on delete cascade
+);
+
+create index if not exists verification_runs_document_claim_idx
+  on public.verification_runs (document_id, claim_id, created_at desc);
+
+create table if not exists public.verification_layer_scores (
+  id                 uuid primary key default gen_random_uuid(),
+  verification_run_id uuid not null references public.verification_runs (id) on delete cascade,
+  layer_key          text not null,
+  label              text not null,
+  weight             numeric(4, 3) not null check (weight >= 0 and weight <= 1),
+  score              numeric(4, 3) not null check (score >= 0 and score <= 1),
+  weighted_score     numeric(4, 3) not null check (weighted_score >= 0 and weighted_score <= 1),
+  evidence_snippets  text[] not null default '{}',
+  sources            text[] not null default '{}',
+  rationale          text not null,
+  missing_evidence   boolean not null default false,
+  contradiction      boolean not null default false,
+  created_at         timestamptz not null default now()
+);
+
+alter table public.verification_layer_scores
+  add column if not exists contradiction boolean not null default false;
+
+create index if not exists verification_layer_scores_run_idx
+  on public.verification_layer_scores (verification_run_id);
+
+alter table public.verification_runs enable row level security;
+alter table public.verification_layer_scores enable row level security;
+
+drop policy if exists "Service role all on verification_runs" on public.verification_runs;
+create policy "Service role all on verification_runs"
+  on public.verification_runs for all to service_role
+  using (true) with check (true);
+
+drop policy if exists "Service role all on verification_layer_scores" on public.verification_layer_scores;
+create policy "Service role all on verification_layer_scores"
+  on public.verification_layer_scores for all to service_role
+  using (true) with check (true);

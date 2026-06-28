@@ -53,6 +53,7 @@ Pair with the frontend (`npm run dev` in `frontend/`) so `/api` requests proxy c
 | GET | `/api/audit/stream` | SSE agent updates |
 | POST | `/api/documents/ingest` | Upload PDF → chunk → embed |
 | POST | `/api/documents/{id}/extract` | RAG → OpenAI → claims |
+| POST | `/api/documents/{id}/claims/{claim_id}/verify` | Weighted confidence verification |
 | POST | `/api/documents/{id}/report/pdf` | Extraction report PDF |
 | GET | `/api/documents/{id}` | Status + stored claims |
 
@@ -70,6 +71,17 @@ Plus `backend/supabase/schema.sql` applied in Supabase ([setup guide](supabase/R
 2. **Extract** — MiniLM pillar routing (top 3 chunks per E/S/G, no threshold gate) → per-pillar GPT (`temperature=0`) → regex claim validation → Supabase.
 
 Optional env: `RAG_CHUNKS_PER_PILLAR=3`, `RAG_PILLAR_ROUTING_MODEL=sentence-transformers/all-MiniLM-L6-v2`, `PILLAR_ROUTING_CONFIDENCE=0.7`.
+
+Weighted verification can optionally use **live web industry benchmarking** via OpenRouter:
+
+- `OPENROUTER_API_KEY` — required for live benchmark
+- `OPENROUTER_MODEL=google/gemini-2.5-flash` — appends `:online` automatically for web search
+
+Peer selection is restricted by `backend/data/construction_company_profiles.json`. Each audited Malaysian construction company needs a local profile with `subsector`, `products_services`, and `allowed_peers` before live benchmarking runs. Unknown companies score the industry layer as inconclusive (`0.25`) until you add them to the registry.
+
+If `OPENROUTER_API_KEY` is not set, industry benchmarking falls back to deterministic MVP peer ranges.
+
+Check `/api/health` for `live_benchmark.ready` and `live_benchmark.model`.
 
 If pipeline keys are missing, document routes return **mock fixture data** (same as the demo UI).
 

@@ -1,28 +1,47 @@
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight, RotateCcw, Target } from 'lucide-react';
 import type { AuditPayload, ExtractedClaim } from '../../types/audit';
-import type { RunPhase } from '../../hooks/useAudit';
-import { AgentSwimlane } from '../audit/AgentSwimlane/AgentSwimlane';
-import { DiscrepancyCanvas } from '../audit/DiscrepancyCanvas/DiscrepancyCanvas';
-import { LedgerTimeline } from '../audit/LedgerTimeline/LedgerTimeline';
+import type { WeightedVerificationResult } from '../../types/audit';
+import { verifyClaim } from '../../lib/documents';
 import { MapCanvas } from '../audit/MapCanvas/MapCanvas';
-import { SentimentFeed } from '../audit/SentimentFeed/SentimentFeed';
+import { WeightedConfidencePanel } from '../audit/WeightedConfidencePanel/WeightedConfidencePanel';
 import './wizard.css';
 
 interface Props {
   audit: AuditPayload;
-  phase: RunPhase;
+  documentId: string | null;
   claim: ExtractedClaim | null;
-  onReplay: () => void;
   onProceed: () => void;
 }
 
 /**
- * Step 3 — Evidence triangulation. The Report Parser's claim is fanned out to
- * the three evidence agents (live swimlanes), whose findings are linked on the
- * Discrepancy Canvas and detailed in the ledger / geospatial / media surfaces.
+ * Step 3 — Evidence triangulation for one selected claim. The weighted
+ * confidence framework scores deterministic evidence layers; Geospatial Truth
+ * remains a separate mocked canvas for now.
  */
-export function EvidenceView({ audit, phase, claim, onReplay, onProceed }: Props) {
-  const running = phase === 'running';
+export function EvidenceView({ audit, documentId, claim, onProceed }: Props) {
+  const [result, setResult] = useState<WeightedVerificationResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const runVerification = useCallback(async () => {
+    if (!documentId || !claim) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const next = await verifyClaim(documentId, claim.id);
+      setResult(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed.');
+    } finally {
+      setBusy(false);
+    }
+  }, [documentId, claim]);
+
+  useEffect(() => {
+    setResult(null);
+    void runVerification();
+  }, [runVerification]);
 
   return (
     <div className="wz wz--wide gg-fade-in">
@@ -38,32 +57,29 @@ export function EvidenceView({ audit, phase, claim, onReplay, onProceed }: Props
           )}
         </div>
         <div className="wz__head-actions">
-          <button className="wz-btn wz-btn--ghost" onClick={onReplay} disabled={running}>
+          <button className="wz-btn wz-btn--ghost" onClick={runVerification} disabled={busy || !claim}>
             <RotateCcw size={15} />
-            Replay
+            {busy ? 'Verifying…' : 'Replay verification'}
           </button>
-          <button className="wz-btn wz-btn--primary" onClick={onProceed} disabled={running}>
-            {running ? 'Agents verifying…' : 'View risk verdict'}
-            {!running && <ArrowRight size={16} />}
+          <button className="wz-btn wz-btn--primary" onClick={onProceed} disabled={busy}>
+            View risk verdict
+            <ArrowRight size={16} />
           </button>
         </div>
       </header>
 
-      <section className="ev-block">
-        <AgentSwimlane states={audit.agent_states} weights={audit.global_metrics.agent_weights} />
-      </section>
-
-      <section className="ev-block">
-        <DiscrepancyCanvas audit={audit} />
-      </section>
-
       <section className="ev-grid">
-        <LedgerTimeline state={audit.agent_states.LedgerAuditorAgent} />
+        {claim ? (
+          <WeightedConfidencePanel
+            claim={claim}
+            result={result}
+            busy={busy}
+            error={error}
+          />
+        ) : (
+          <div className="wz-error">Select a claim before triangulating evidence.</div>
+        )}
         <MapCanvas state={audit.agent_states.GeospatialTruthAgent} meta={audit.meta} />
-      </section>
-
-      <section className="ev-block">
-        <SentimentFeed state={audit.agent_states.MediaSentinelAgent} />
       </section>
     </div>
   );

@@ -174,6 +174,88 @@ class DocumentStore:
         )
         return _response_rows(resp)
 
+    def get_claim(self, document_id: str, claim_id: str) -> dict[str, Any] | None:
+        resp = (
+            self.client.table("claims")
+            .select("*")
+            .eq("document_id", document_id)
+            .eq("id", claim_id)
+            .limit(1)
+            .execute()
+        )
+        return _first_row(resp)
+
+    def insert_verification_run(
+        self,
+        *,
+        document_id: str,
+        claim_id: str,
+        overall_score: float,
+        contradiction_flag: bool,
+        rationale_trail: list[str],
+        layer_scores: list[dict[str, Any]],
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        resp = (
+            self.client.table("verification_runs")
+            .insert(
+                {
+                    "document_id": document_id,
+                    "claim_id": claim_id,
+                    "overall_score": overall_score,
+                    "contradiction_flag": contradiction_flag,
+                    "rationale_trail": rationale_trail,
+                    "payload": payload or {},
+                }
+            )
+            .execute()
+        )
+        run = _first_row(resp)
+        if run is None:
+            raise RuntimeError("Supabase insert(verification_run) returned no data.")
+
+        rows = [
+            {
+                "verification_run_id": run["id"],
+                "layer_key": layer["layer_key"],
+                "label": layer["label"],
+                "weight": layer["weight"],
+                "score": layer["score"],
+                "weighted_score": layer["weighted_score"],
+                "evidence_snippets": layer.get("evidence_snippets") or [],
+                "sources": layer.get("sources") or [],
+                "rationale": layer["rationale"],
+                "missing_evidence": layer.get("missing_evidence", False),
+                "contradiction": layer.get("contradiction", False),
+            }
+            for layer in layer_scores
+        ]
+        if rows:
+            self.client.table("verification_layer_scores").insert(rows).execute()
+        return run
+
+    def list_verification_runs(
+        self, document_id: str, claim_id: str
+    ) -> list[dict[str, Any]]:
+        runs_resp = (
+            self.client.table("verification_runs")
+            .select("*")
+            .eq("document_id", document_id)
+            .eq("claim_id", claim_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        runs = _response_rows(runs_resp)
+        for run in runs:
+            layers_resp = (
+                self.client.table("verification_layer_scores")
+                .select("*")
+                .eq("verification_run_id", run["id"])
+                .execute()
+            )
+            run["layer_scores"] = _response_rows(layers_resp)
+        return runs
+
     def get_latest_extraction_run(self, document_id: str) -> dict[str, Any] | None:
         resp = (
             self.client.table("extraction_runs")

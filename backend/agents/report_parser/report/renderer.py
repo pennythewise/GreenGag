@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 from typing import Any
 
@@ -71,6 +72,57 @@ def _claim_overview_to_view(claim: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _claim_pages(claims: list[dict[str, Any]], *, limit: int = 8) -> list[int]:
+    pages: set[int] = set()
+    for claim in claims:
+        page = claim.get("page")
+        if isinstance(page, int) and page > 0:
+            pages.add(page)
+    return sorted(pages)[:limit]
+
+
+def _source_page_snapshots(
+    *,
+    document: dict[str, Any],
+    claims: list[dict[str, Any]],
+    store: DocumentStore,
+) -> list[dict[str, str | int]]:
+    storage_path = document.get("storage_path")
+    if not storage_path:
+        return []
+
+    pages = _claim_pages(claims)
+    if not pages:
+        return []
+
+    try:
+        import fitz
+
+        pdf_bytes = store.download_pdf(str(storage_path))
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+        snapshots: list[dict[str, str | int]] = []
+        matrix = fitz.Matrix(1.25, 1.25)
+
+        for page_no in pages:
+            index = page_no - 1
+            if index < 0 or index >= pdf.page_count:
+                continue
+            page = pdf.load_page(index)
+            pix = page.get_pixmap(matrix=matrix, alpha=False)
+            image_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
+            snapshots.append(
+                {
+                    "page": page_no,
+                    "src": f"data:image/png;base64,{image_b64}",
+                }
+            )
+
+        pdf.close()
+        return snapshots
+    except Exception:
+        return []
+
+
 def _summary_stats(claims: list[dict[str, Any]]) -> dict[str, Any]:
     by_pillar = {p: 0 for p in PILLARS}
     pages: set[int] = set()
@@ -122,6 +174,7 @@ def _assemble_context(
     claims: list[dict[str, Any]],
     extraction_notes: list[str],
     pillar_status: dict[str, Any] | None = None,
+    source_pages: list[dict[str, str | int]] | None = None,
 ) -> dict[str, Any]:
     summary = _summary_stats(claims)
     return {
@@ -129,6 +182,7 @@ def _assemble_context(
         "document": document,
         "summary": summary,
         "claim_overview": [_claim_overview_to_view(c) for c in claims],
+        "source_pages": source_pages or [],
         "claims": [_claim_to_view(c) for c in claims],
         "conclusion": build_conclusion(summary["total_claims"]),
         "disclaimer": DISCLAIMER,
@@ -152,12 +206,14 @@ def load_report_context(document_id: str) -> dict[str, Any]:
     run = store.get_latest_extraction_run(document_id)
     notes = list(run.get("extraction_notes") or []) if run else []
     pillar_status = run.get("pillar_status") if run else {}
+    source_pages = _source_page_snapshots(document=doc, claims=rows, store=store)
 
     return _assemble_context(
         document=doc,
         claims=rows,
         extraction_notes=notes,
         pillar_status=pillar_status if isinstance(pillar_status, dict) else {},
+        source_pages=source_pages,
     )
 
 

@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "sector": "construction",
+  "country": "Malaysia",
+  "default_excluded_peer_categories": [
+    "cement manufacturer",
+    "construction materials supplier",
+    "plantation",
+    "oil and gas",
+    "utilities",
+    "telecommunications",
+    "banking",
+    "general conglomerate unrelated to construction"
+  ],
+  "companies": {
+    "binastra": {
+      "canonical_name": "Binastra Corporation Berhad",
+      "aliases": [
+        "binastra",
+        "binastra corporation",
+        "binastra corporation berhad",
+        "binastra berhad"
+      ],
+      "subsector": "building construction and property development",
+      "products_services": [
+        "building construction",
+        "property development",
+        "residential projects",
+        "commercial construction"
+      ],
+      "allowed_peers": [
+        "kerjaya-prospek",
+        "sunway-construction",
+        "ijm",
+        "wct",
+        "gaqrs",
+        "mkh"
+      ]
+    },
+    "gaqrs": {
+      "canonical_name": "Gabungan AQRS Berhad",
+      "aliases": [
+        "gaqrs",
+        "gabungan aqrs",
+        "gabungan aqrs berhad",
+        "aqrs"
+      ],
+      "subsector": "building construction and civil engineering",
+      "products_services": [
+        "building construction",
+        "civil engineering",
+        "infrastructure works"
+      ],
+      "allowed_peers": [
+        "binastra",
+        "kerjaya-prospek",
+        "sunway-construction",
+        "ijm",
+        "wct",
+        "mkh"
+      ]
+    },
+    "kerjaya-prospek": {
+      "canonical_name": "Kerjaya Prospek Group Berhad",
+      "aliases": [
+        "kerjaya prospek",
+        "kerjaya prospek group",
+        "kerjaya prospek group berhad",
+        "kerjaya"
+      ],
+      "subsector": "building construction and property development",
+      "products_services": [
+        "building construction",
+        "property development",
+        "high-rise construction"
+      ],
+      "allowed_peers": [
+        "binastra",
+        "sunway-construction",
+        "ijm",
+        "wct",
+        "gaqrs",
+        "mkh"
+      ]
+    },
+    "sunway-construction": {
+      "canonical_name": "Sunway Construction Group Berhad",
+      "aliases": [
+        "sunway construction",
+        "sunway construction group",
+        "sunway construction group berhad"
+      ],
+      "subsector": "building construction and infrastructure",
+      "products_services": [
+        "building construction",
+        "infrastructure",
+        "civil engineering"
+      ],
+      "allowed_peers": [
+        "ijm",
+        "gamuda",
+        "wct",
+        "kerjaya-prospek",
+        "gaqrs",
+        "mmc"
+      ]
+    },
+    "ijm": {
+      "canonical_name": "IJM Corporation Berhad",
+      "aliases": [
+        "ijm",
+        "ijm corporation",
+        "ijm corporation berhad"
+      ],
+      "subsector": "construction and infrastructure",
+      "products_services": [
+        "building construction",
+        "infrastructure",
+        "toll roads",
+        "port operations"
+      ],
+      "allowed_peers": [
+        "gamuda",
+        "sunway-construction",
+        "wct",
+        "mmc",
+        "kerjaya-prospek"
+      ]
+    },
+    "gamuda": {
+      "canonical_name": "Gamuda Berhad",
+      "aliases": [
+        "gamuda",
+        "gamuda berhad"
+      ],
+      "subsector": "infrastructure and engineering construction",
+      "products_services": [
+        "infrastructure",
+        "rail construction",
+        "highway construction",
+        "tunneling",
+        "property development"
+      ],
+      "allowed_peers": [
+        "ijm",
+        "sunway-construction",
+        "mmc",
+        "wct",
+        "uems"
+      ]
+    },
+    "wct": {
+      "canonical_name": "WCT Holdings Berhad",
+      "aliases": [
+        "wct",
+        "wct holdings",
+        "wct holdings berhad"
+      ],
+      "subsector": "construction and property development",
+      "products_services": [
+        "building construction",
+        "property development",
+        "infrastructure"
+      ],
+      "allowed_peers": [
+        "ijm",
+        "sunway-construction",
+        "kerjaya-prospek",
+        "binastra",
+        "gaqrs"
+      ]
+    },
+    "mkh": {
+      "canonical_name": "MKH Berhad",
+      "aliases": [
+        "mkh",
+        "mkh berhad"
+      ],
+      "subsector": "building materials and construction",
+      "products_services": [
+        "building materials",
+        "property development",
+        "construction"
+      ],
+      "allowed_peers": [
+        "binastra",
+        "kerjaya-prospek",
+        "gaqrs",
+        "wct"
+      ]
+    },
+    "mmc": {
+      "canonical_name": "MMC Corporation Berhad",
+      "aliases": [
+        "mmc",
+        "mmc corporation",
+        "mmc corporation berhad"
+      ],
+      "subsector": "ports and infrastructure construction",
+      "products_services": [
+        "port operations",
+        "logistics",
+        "infrastructure",
+        "engineering services"
+      ],
+      "allowed_peers": [
+        "gamuda",
+        "ijm",
+        "sunway-construction",
+        "uems"
+      ]
+    },
+    "uems": {
+      "canonical_name": "UEM Group Berhad",
+      "aliases": [
+        "uem",
+        "uem group",
+        "uem builders",
+        "uem builders berhad"
+      ],
+      "subsector": "highway and infrastructure construction",
+      "products_services": [
+        "highway construction",
+        "infrastructure",
+        "expressway operations"
+      ],
+      "allowed_peers": [
+        "gamuda",
+        "ijm",
+        "mmc",
+        "sunway-construction"
+      ]
+    }
+  }
+}

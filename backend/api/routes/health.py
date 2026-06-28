@@ -16,5 +16,10 @@ async def health() -> dict:
         "status": "ok",
         "data_mode": settings.data_mode,
         "langgraph": orchestrator._HAS_LANGGRAPH,
+        "live_benchmark": {
+            "provider": "openrouter",
+            "model": settings.openrouter_online_model,
+            "ready": settings.live_benchmark_ready(),
+        },
         "secrets_present": {k: bool(v) for k, v in settings.keys.items()},
     }

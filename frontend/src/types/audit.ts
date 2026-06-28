@@ -148,6 +148,43 @@ export interface MediaSentinelState extends BaseAgentState {
   articles: MediaArticle[];
 }
 
+/* ── Weighted Confidence Verification ─────────────────────────────────── */
+
+export type EvidenceLayerKey =
+  | 'official_report'
+  | 'financial_statements'
+  | 'historical_consistency'
+  | 'methodology'
+  | 'industry_benchmark';
+
+export interface EvidenceLayerScore {
+  layer_key: EvidenceLayerKey;
+  label: string;
+  weight: number;
+  score: number;
+  weighted_score: number;
+  evidence_snippets: string[];
+  sources: string[];
+  rationale: string;
+  missing_evidence: boolean;
+  contradiction: boolean;
+}
+
+export interface WeightedVerificationResult {
+  id: string;
+  document_id: string;
+  claim_id: string;
+  overall_score: number;
+  uncapped_score?: number | null;
+  contradiction_flag: boolean;
+  score_cap_applied: boolean;
+  score_cap_reason?: string | null;
+  layer_scores: EvidenceLayerScore[];
+  rationale_trail: string[];
+  mode: 'mock' | 'live';
+  created_at?: string | null;
+}
+
 /* ── Agent 5: Geospatial Truth ────────────────────────────────────────── */
 
 export interface TimeSeriesPoint {

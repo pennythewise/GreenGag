@@ -23,6 +23,13 @@ AgentKey = Literal[
 ]
 
 EsgPillar = Literal["environment", "social", "governance"]
+EvidenceLayerKey = Literal[
+    "official_report",
+    "financial_statements",
+    "historical_consistency",
+    "methodology",
+    "industry_benchmark",
+]
 
 
 class GeoPolygon(BaseModel):
@@ -136,6 +143,41 @@ class MediaArticle(BaseModel):
 
 class MediaSentinelState(BaseAgentState):
     articles: list[MediaArticle] = Field(default_factory=list)
+
+
+class EvidenceLayerScore(BaseModel):
+    layer_key: EvidenceLayerKey
+    label: str
+    weight: float = Field(ge=0.0, le=1.0)
+    score: float = Field(ge=0.0, le=1.0)
+    weighted_score: float = Field(ge=0.0, le=1.0)
+    evidence_snippets: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    rationale: str
+    missing_evidence: bool = False
+    contradiction: bool = False
+
+
+class WeightedVerificationState(BaseAgentState):
+    claim_id: str | None = None
+    overall_score: float = Field(0.0, ge=0.0, le=1.0)
+    contradiction_flag: bool = False
+    layer_scores: list[EvidenceLayerScore] = Field(default_factory=list)
+
+
+class VerificationRunResponse(BaseModel):
+    id: str
+    document_id: str
+    claim_id: str
+    overall_score: float = Field(ge=0.0, le=1.0)
+    uncapped_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    contradiction_flag: bool = False
+    score_cap_applied: bool = False
+    score_cap_reason: str | None = None
+    layer_scores: list[EvidenceLayerScore] = Field(default_factory=list)
+    rationale_trail: list[str] = Field(default_factory=list)
+    mode: str = "live"
+    created_at: str | None = None
 
 
 class TimeSeriesPoint(BaseModel):

@@ -52,6 +52,8 @@ class Settings:
     rag_pillar_routing_model: str
     pillar_routing_confidence_floor: float
     llm_extraction_model: str
+    openrouter_base_url: str
+    openrouter_model: str
 
     @property
     def is_live(self) -> bool:
@@ -73,6 +75,20 @@ class Settings:
     def anthropic_api_key(self) -> str | None:
         return self.keys.get("ANTHROPIC_API_KEY")
 
+    @property
+    def openrouter_api_key(self) -> str | None:
+        return self.keys.get("OPENROUTER_API_KEY")
+
+    @property
+    def openrouter_online_model(self) -> str:
+        model = self.openrouter_model.strip()
+        if ":online" in model:
+            return model
+        return f"{model}:online"
+
+    def live_benchmark_ready(self) -> bool:
+        return bool(self.openrouter_api_key)
+
     def pipeline_ready(self) -> bool:
         return all(self.keys.get(k) for k in PIPELINE_KEYS)
 
@@ -80,6 +96,7 @@ class Settings:
 def _collect_keys() -> dict[str, str | None]:
     names = {k for group in REQUIRED_KEYS.values() for k in group}
     names.update(PIPELINE_KEYS)
+    names.add("OPENROUTER_API_KEY")
     return {name: os.getenv(name) for name in sorted(names)}
 
 
@@ -134,6 +151,12 @@ def validate_environment() -> Settings:
             os.getenv("PILLAR_ROUTING_CONFIDENCE", "0.7")
         ),
         llm_extraction_model=os.getenv("LLM_EXTRACTION_MODEL", "gpt-4o"),
+        openrouter_base_url=os.getenv(
+            "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
+        ),
+        openrouter_model=os.getenv(
+            "OPENROUTER_MODEL", "google/gemini-2.5-flash"
+        ),
     )
 
 

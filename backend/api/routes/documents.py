@@ -10,7 +10,13 @@ from pydantic import BaseModel, Field
 
 from config import settings
 from mocks import fixtures
-from models.schemas import ExtractedClaim, HighlightBox, ReportParserState
+from models.schemas import (
+    ExtractedClaim,
+    HighlightBox,
+    ReportParserState,
+    VerificationRunResponse,
+)
+from agents.weighted_confidence import WeightedConfidenceAgent
 from agents.report_parser import ExtractPipeline, IngestPipeline
 from agents.report_parser.report.renderer import render_extraction_report_pdf
 
@@ -66,6 +72,30 @@ def _mock_extract() -> ExtractResponse:
             "governance": {"status": "ok", "best_score": 0.68, "chunks_selected": 5},
         },
         extraction_notes=["Mock extraction — pipeline keys not configured or mock mode."],
+        mode="mock",
+    )
+
+
+async def _mock_verify_claim(claim_id: str) -> VerificationRunResponse:
+    parser = fixtures.report_parser_state()
+    claim = next((c for c in parser.extracted_claims if c.id == claim_id), None)
+    if claim is None:
+        raise LookupError(f"Claim {claim_id} not found.")
+    chunks = [
+        {
+            "id": block.id,
+            "content": block.text,
+            "page": page.page,
+            "section_heading": page.heading,
+        }
+        for page in (parser.document.pages if parser.document else [])
+        for block in page.blocks
+    ]
+    return await WeightedConfidenceAgent(mode="mock").verify(
+        document_id="mock-document",
+        claim=claim,
+        chunks=chunks,
+        persist_run_id=f"mock-verification-{claim_id}",
         mode="mock",
     )
 
@@ -145,6 +175,75 @@ async def download_extraction_report(document_id: str) -> StreamingResponse:
         iter([pdf_bytes]),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/{document_id}/claims/{claim_id}/verify",
+    response_model=VerificationRunResponse,
+)
+async def verify_claim(document_id: str, claim_id: str) -> VerificationRunResponse:
+    if document_id == "mock-document" or not settings.pipeline_ready():
+        try:
+            return await _mock_verify_claim(claim_id)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    from agents.report_parser.store.document_store import DocumentStore
+
+    store = DocumentStore()
+    doc = store.get_document(document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    claim_row = store.get_claim(document_id, claim_id)
+    if not claim_row:
+        raise HTTPException(status_code=404, detail="Claim not found.")
+
+    chunks = store.list_chunks(document_id)
+    try:
+        result = await WeightedConfidenceAgent().verify(
+            document_id=document_id,
+            claim=_row_to_claim(claim_row),
+            chunks=chunks,
+            reporting_entity=doc.get("reporting_entity"),
+        )
+        run = store.insert_verification_run(
+            document_id=document_id,
+            claim_id=claim_id,
+            overall_score=result.overall_score,
+            contradiction_flag=result.contradiction_flag,
+            rationale_trail=result.rationale_trail,
+            layer_scores=[layer.model_dump() for layer in result.layer_scores],
+            payload={
+                "agent": "WeightedConfidenceAgent",
+                "uncapped_score": result.uncapped_score,
+                "score_cap_applied": result.score_cap_applied,
+                "score_cap_reason": result.score_cap_reason,
+            },
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        detail = str(exc)
+        if hasattr(exc, "message"):
+            detail = str(getattr(exc, "message"))
+        elif getattr(exc, "args", None):
+            first = exc.args[0]
+            if isinstance(first, dict) and first.get("message"):
+                detail = str(first["message"])
+        if "verification_" in detail or "PGRST" in detail:
+            detail = (
+                f"Supabase schema mismatch: {detail}. "
+                "Re-run the migration block at the bottom of backend/supabase/schema.sql."
+            )
+        raise HTTPException(status_code=500, detail=detail) from exc
+
+    return result.model_copy(
+        update={
+            "id": str(run["id"]),
+            "created_at": str(run.get("created_at")) if run.get("created_at") else None,
+        }
     )
 
 

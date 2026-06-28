@@ -94,6 +94,21 @@
     {% endif %}
   </section>
 
+  {% if source_pages %}
+  <section class="source-pages">
+    <h2>Source page snapshots</h2>
+    <p class="source-pages__intro">
+      Visual excerpts from the uploaded report pages referenced by extracted claims.
+    </p>
+    {% for source_page in source_pages %}
+    <article class="source-page">
+      <h3>Source page {{ source_page.page }}</h3>
+      <img src="{{ source_page.src }}" alt="Source PDF page {{ source_page.page }}" />
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   <section class="claims-section">
     <h2>Extracted claims</h2>
     {% if claims %}

@@ -17,7 +17,7 @@ import { DashboardView } from '../components/wizard/DashboardView';
 import './App.css';
 
 function Wizard() {
-  const { audit, phase, run, setAudit } = useAudit();
+  const { audit, setAudit } = useAudit();
   const { setActiveClaim, setActiveDiscrepancy } = useSelection();
 
   const [step, setStep] = useState<WizardStep>('upload');
@@ -107,7 +107,6 @@ function Wizard() {
   function handleTriangulate() {
     if (!selectedClaimId) return;
     go('evidence');
-    run();
   }
 
   function handleReset() {
@@ -161,9 +160,8 @@ function Wizard() {
           {step === 'evidence' && (
             <EvidenceView
               audit={audit}
-              phase={phase}
+              documentId={documentId}
               claim={selectedClaim}
-              onReplay={run}
               onProceed={() => go('dashboard')}
             />
           )}

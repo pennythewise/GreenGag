@@ -1,4 +1,8 @@
-import type { ExtractedClaim, ReportParserState } from '../types/audit';
+import type {
+  ExtractedClaim,
+  ReportParserState,
+  WeightedVerificationResult,
+} from '../types/audit';
 
 export interface IngestResponse {
   document_id: string;
@@ -58,6 +62,17 @@ export async function downloadExtractionReport(documentId: string): Promise<void
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+export async function verifyClaim(
+  documentId: string,
+  claimId: string,
+): Promise<WeightedVerificationResult> {
+  const res = await fetch(`/api/documents/${documentId}/claims/${claimId}/verify`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
 }
 
 /** Sample shortcut — backend returns deterministic mock fixture data. */
