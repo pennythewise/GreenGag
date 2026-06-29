@@ -9,6 +9,7 @@ from models.schemas import (
     EvidenceLayerKey,
     EvidenceLayerScore,
     ExtractedClaim,
+    PeerIntensityRow,
     VerificationRunResponse,
     WeightedVerificationState,
 )
@@ -303,14 +304,30 @@ class WeightedConfidenceAgent(BaseAgent):
         live = await benchmark_claim_live(claim, reporting_entity=reporting_entity)
         if live:
             rationale = live.rationale
-            if live.peer_context and live.peer_context.profile_resolved:
-                peers = ", ".join(live.peer_context.allowed_peer_names[:5])
-                rationale = (
-                    f"Benchmark restricted to Malaysian construction peers: {peers}. {rationale}"
-                )
             if live.contradiction:
                 rationale = f"Contradiction flagged by live benchmark search. {rationale}"
-            return _layer(
+
+            # Convert peer intensity records to schema rows
+            peer_rows: list[PeerIntensityRow] = [
+                PeerIntensityRow(
+                    company=r.company_name,
+                    revenue_rm_million=r.revenue_rm_million,
+                    scope_1_2_tco2e=r.scope_1_2_tco2e,
+                    scope_3_tco2e=r.scope_3_tco2e,
+                    total_scope_123_tco2e=r.total_scope_123_tco2e,
+                    intensity_scope_12_per_rm_million=r.intensity_scope_12,
+                    intensity_scope_3_per_rm_million=r.intensity_scope_3,
+                    intensity_total_per_rm_million=r.intensity_total,
+                    intensity_tco2e_per_rm_million=r.intensity_scope_12,
+                    data_year=r.data_year,
+                    data_found=r.data_found,
+                    source=r.source,
+                    is_target=r.is_target,
+                )
+                for r in live.peer_intensity_table
+            ]
+
+            layer = _layer(
                 "industry_benchmark",
                 live.score,
                 live.evidence_snippets,
@@ -319,6 +336,14 @@ class WeightedConfidenceAgent(BaseAgent):
                 not live.used_live_search,
                 contradiction=live.contradiction,
             )
+            return layer.model_copy(update={
+                "peer_table": peer_rows,
+                "benchmark_tldr": live.tldr or None,
+                "benchmark_insights": live.insights or None,
+                "benchmark_conclusion": live.conclusion or None,
+                "benchmark_unit": live.benchmark_unit if live.is_ghg_claim else None,
+                "peer_intensity_range": live.peer_intensity_range or None,
+            })
 
         comparable_value = _claim_number(claim)
         benchmark = _mock_benchmark_range(claim)
@@ -338,7 +363,9 @@ class WeightedConfidenceAgent(BaseAgent):
                 ["MVP mock peer benchmark dataset"],
                 rationale,
                 False,
-            )
+            ).model_copy(update={
+                "benchmark_tldr": "Live OpenRouter benchmark unavailable; showing MVP mock peer range.",
+            })
         if claim.unit or claim.metric:
             return _layer(
                 "industry_benchmark",
@@ -347,7 +374,9 @@ class WeightedConfidenceAgent(BaseAgent):
                 ["MVP mock peer benchmark dataset"],
                 "Claim has a comparable metric/unit, but no peer range is configured yet.",
                 True,
-            )
+            ).model_copy(update={
+                "benchmark_tldr": "Live OpenRouter benchmark unavailable; limited mock comparison only.",
+            })
         return _layer(
             "industry_benchmark",
             0.0,
@@ -355,7 +384,9 @@ class WeightedConfidenceAgent(BaseAgent):
             [],
             "Claim does not expose a comparable benchmark metric.",
             True,
-        )
+        ).model_copy(update={
+            "benchmark_tldr": "No comparable benchmark metric found for this claim.",
+        })
 
     def _detect_contradiction(self, claim: ExtractedClaim, chunk_texts: list[str]) -> bool:
         text = _join([claim.raw_text, *chunk_texts])
@@ -380,7 +411,7 @@ def _layer(
         weight=weight,
         score=score,
         weighted_score=round(weight * score, 3),
-        evidence_snippets=[s for s in snippets if s][:3],
+        evidence_snippets=[s for s in snippets if s][:4],
         sources=sources,
         rationale=rationale,
         missing_evidence=missing,

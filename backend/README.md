@@ -72,12 +72,12 @@ Plus `backend/supabase/schema.sql` applied in Supabase ([setup guide](supabase/R
 
 Optional env: `RAG_CHUNKS_PER_PILLAR=3`, `RAG_PILLAR_ROUTING_MODEL=sentence-transformers/all-MiniLM-L6-v2`, `PILLAR_ROUTING_CONFIDENCE=0.7`.
 
-Weighted verification can optionally use **live web industry benchmarking** via OpenRouter:
+Weighted verification uses **live web industry benchmarking** via OpenRouter only:
 
 - `OPENROUTER_API_KEY` — required for live benchmark
-- `OPENROUTER_MODEL=google/gemini-2.5-flash` — appends `:online` automatically for web search
+- `OPENROUTER_MODEL=google/gemini-2.5-flash` — routed through OpenRouter as `google/gemini-2.5-flash:online` (never Google AI direct)
 
-Peer selection is restricted by `backend/data/construction_company_profiles.json`. Each audited Malaysian construction company needs a local profile with `subsector`, `products_services`, and `allowed_peers` before live benchmarking runs. Unknown companies score the industry layer as inconclusive (`0.25`) until you add them to the registry.
+Peer selection is restricted by `backend/data/construction_company_profiles.json`. Each entry stores `company_name`, `subsector_category`, `company_size`, and `fy2025_total_revenue`. All other companies in that registry are used as the peer universe. Unknown companies score the industry layer as inconclusive (`0.25`) until you add them.
 
 If `OPENROUTER_API_KEY` is not set, industry benchmarking falls back to deterministic MVP peer ranges.
 

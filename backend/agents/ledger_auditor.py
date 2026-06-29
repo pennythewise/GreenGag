@@ -25,5 +25,5 @@ class LedgerAuditorAgent(BaseAgent):
         # TODO(live): async query INTERNAL_LEDGER_DB_URL, join against the
         # approved-green-vendor index, and compute the spend split.
         raise NotImplementedError(
-            "LedgerAuditorAgent live mode requires INTERNAL_LEDGER_DB_URL."
+            "LedgerAuditorAgent live mode is not wired yet."
         )

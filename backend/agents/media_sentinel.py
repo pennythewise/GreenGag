@@ -25,5 +25,5 @@ class MediaSentinelAgent(BaseAgent):
         # TODO(live): run scraping pipelines (NEWS_API_KEY + NGO sources) and a
         # contradiction classifier against the extracted claims.
         raise NotImplementedError(
-            "MediaSentinelAgent live mode requires NEWS_API_KEY + scraping pipelines."
+            "MediaSentinelAgent live mode is not wired yet."
         )

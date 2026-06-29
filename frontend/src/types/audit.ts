@@ -157,6 +157,25 @@ export type EvidenceLayerKey =
   | 'methodology'
   | 'industry_benchmark';
 
+/** One row in the GHG intensity comparison table (industry_benchmark layer only). */
+export interface PeerIntensityRow {
+  company: string;
+  revenue_rm_million: number | null;
+  scope_1_2_tco2e: number | null;
+  scope_3_tco2e: number | null;
+  total_scope_123_tco2e: number | null;
+  intensity_scope_12_per_rm_million: number | null;
+  intensity_scope_3_per_rm_million: number | null;
+  intensity_total_per_rm_million: number | null;
+  /** Alias for scope 1+2 intensity (backward compatible). */
+  intensity_tco2e_per_rm_million: number | null;
+  data_year: string | null;
+  data_found: boolean;
+  source: string;
+  /** True for the company being audited; false for peer companies. */
+  is_target: boolean;
+}
+
 export interface EvidenceLayerScore {
   layer_key: EvidenceLayerKey;
   label: string;
@@ -168,6 +187,18 @@ export interface EvidenceLayerScore {
   rationale: string;
   missing_evidence: boolean;
   contradiction: boolean;
+  /** GHG intensity comparison table — populated for industry_benchmark layer when live search ran. */
+  peer_table?: PeerIntensityRow[];
+  /** One-line TLDR for auditors. */
+  benchmark_tldr?: string | null;
+  /** AI-generated insights paragraph from sustainability report comparison. */
+  benchmark_insights?: string | null;
+  /** One-sentence verdict on claim credibility. */
+  benchmark_conclusion?: string | null;
+  /** Standard unit used for comparison, e.g. "tCO₂e / RM million revenue". */
+  benchmark_unit?: string | null;
+  /** Observed peer intensity range across FY2023–FY2025. */
+  peer_intensity_range?: string | null;
 }
 
 export interface WeightedVerificationResult {

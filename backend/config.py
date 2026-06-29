@@ -19,16 +19,15 @@ except ImportError:
 
 logger = logging.getLogger("greengag.config")
 
-# Full live audit (all agents + external APIs).
+# Full live audit (satellite / geospatial agents — optional for document pipeline).
 REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
-    "Core orchestration": ("ANTHROPIC_API_KEY", "OPENAI_API_KEY"),
+    "Core orchestration": ("OPENAI_API_KEY",),
     "Remote sensing": (
         "PLANET_LABS_API_KEY",
         "SENTINEL_HUB_CLIENT_ID",
         "SENTINEL_HUB_CLIENT_SECRET",
         "GOOGLE_EARTH_ENGINE_CREDENTIALS",
     ),
-    "External data": ("NEWS_API_KEY", "INTERNAL_LEDGER_DB_URL"),
 }
 
 # Report Parser ingest + extract pipeline (RAG + OpenAI extraction).
@@ -72,10 +71,6 @@ class Settings:
         return self.keys.get("OPENAI_API_KEY")
 
     @property
-    def anthropic_api_key(self) -> str | None:
-        return self.keys.get("ANTHROPIC_API_KEY")
-
-    @property
     def openrouter_api_key(self) -> str | None:
         return self.keys.get("OPENROUTER_API_KEY")
 
@@ -108,7 +103,8 @@ def validate_environment() -> Settings:
         )
 
     keys = _collect_keys()
-    missing = [k for k, v in keys.items() if not v and k in REQUIRED_KEYS]
+    required_flat = {k for group in REQUIRED_KEYS.values() for k in group}
+    missing = [k for k, v in keys.items() if not v and k in required_flat]
 
     if data_mode == "live":
         pipeline_missing = [k for k in PIPELINE_KEYS if not keys.get(k)]

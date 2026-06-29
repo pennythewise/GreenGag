@@ -309,11 +309,16 @@
 .ev-block {
   margin-bottom: 22px;
 }
+.ev-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-bottom: 22px;
+}
 .ev-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
-  margin-bottom: 22px;
   align-items: start;
 }
 

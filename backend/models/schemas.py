@@ -145,6 +145,22 @@ class MediaSentinelState(BaseAgentState):
     articles: list[MediaArticle] = Field(default_factory=list)
 
 
+class PeerIntensityRow(BaseModel):
+    company: str
+    revenue_rm_million: float | None = None
+    scope_1_2_tco2e: float | None = None
+    scope_3_tco2e: float | None = None
+    total_scope_123_tco2e: float | None = None
+    intensity_scope_12_per_rm_million: float | None = None
+    intensity_scope_3_per_rm_million: float | None = None
+    intensity_total_per_rm_million: float | None = None
+    intensity_tco2e_per_rm_million: float | None = None  # alias for scope 1+2
+    data_year: str | None = None
+    data_found: bool = False
+    source: str = ""
+    is_target: bool = False
+
+
 class EvidenceLayerScore(BaseModel):
     layer_key: EvidenceLayerKey
     label: str
@@ -156,6 +172,13 @@ class EvidenceLayerScore(BaseModel):
     rationale: str
     missing_evidence: bool = False
     contradiction: bool = False
+    # GHG intensity benchmark table (populated for industry_benchmark layer only)
+    peer_table: list[PeerIntensityRow] = Field(default_factory=list)
+    benchmark_tldr: str | None = None
+    benchmark_insights: str | None = None
+    benchmark_conclusion: str | None = None
+    benchmark_unit: str | None = None
+    peer_intensity_range: str | None = None
 
 
 class WeightedVerificationState(BaseAgentState):

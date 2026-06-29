@@ -20,6 +20,7 @@ async def health() -> dict:
             "provider": "openrouter",
             "model": settings.openrouter_online_model,
             "ready": settings.live_benchmark_ready(),
+            "note": "Gemini 2.5 Flash via OpenRouter only — no direct Google AI API",
         },
         "secrets_present": {k: bool(v) for k, v in settings.keys.items()},
     }

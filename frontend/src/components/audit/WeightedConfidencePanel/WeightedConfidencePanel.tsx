@@ -1,9 +1,60 @@
 import { AlertTriangle, CheckCircle2, FileSearch } from 'lucide-react';
-import type { ExtractedClaim, WeightedVerificationResult } from '../../../types/audit';
+import type {
+  EvidenceLayerScore,
+  ExtractedClaim,
+  WeightedVerificationResult,
+} from '../../../types/audit';
 import './WeightedConfidencePanel.css';
 
 function pct(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function EvidenceLayerCard({ layer }: { layer: EvidenceLayerScore }) {
+  return (
+    <article className="wc-layer">
+      <div className="wc-layer__top">
+        <div>
+          <h3>{layer.label}</h3>
+          <span>Weight {pct(layer.weight)}</span>
+        </div>
+        <div className="wc-layer__score">
+          <strong>{pct(layer.score)}</strong>
+          <span>adds {pct(layer.weighted_score)}</span>
+        </div>
+      </div>
+      <div className="wc-bar" aria-hidden="true">
+        <span style={{ width: pct(layer.score) }} />
+      </div>
+      <p className="wc-layer__rationale">{layer.rationale}</p>
+      {layer.sources.length > 0 && (
+        <div className="wc-layer__sources">
+          {layer.sources.map((source) => (
+            <span key={source}>{source}</span>
+          ))}
+        </div>
+      )}
+      {layer.evidence_snippets.length > 0 && (
+        <ul className="wc-snippets">
+          {layer.evidence_snippets.map((snippet, idx) => (
+            <li key={`${layer.layer_key}-${idx}`}>{snippet}</li>
+          ))}
+        </ul>
+      )}
+      {layer.missing_evidence && (
+        <div className="wc-missing">
+          <AlertTriangle size={13} />
+          Missing or mocked evidence source
+        </div>
+      )}
+      {layer.contradiction && (
+        <div className="wc-missing wc-missing--contradiction">
+          <AlertTriangle size={13} />
+          Contradiction evidence flagged
+        </div>
+      )}
+    </article>
+  );
 }
 
 interface Props {
@@ -14,6 +65,9 @@ interface Props {
 }
 
 export function WeightedConfidencePanel({ claim, result, busy, error }: Props) {
+  const layers = result?.layer_scores ?? [];
+  const coreLayers = layers.filter((l) => l.layer_key !== 'industry_benchmark');
+
   return (
     <section className="wc-panel gg-card">
       <div className="wc-panel__head">
@@ -31,7 +85,7 @@ export function WeightedConfidencePanel({ claim, result, busy, error }: Props) {
         <FileSearch size={16} />
         <div>
           <strong>{claim.label}</strong>
-          <p>“{claim.raw_text}”</p>
+          <p>&ldquo;{claim.raw_text}&rdquo;</p>
         </div>
       </div>
 
@@ -52,52 +106,13 @@ export function WeightedConfidencePanel({ claim, result, busy, error }: Props) {
         </div>
       )}
 
-      <div className="wc-layers">
-        {(result?.layer_scores ?? []).map((layer) => (
-          <article key={layer.layer_key} className="wc-layer">
-            <div className="wc-layer__top">
-              <div>
-                <h3>{layer.label}</h3>
-                <span>Weight {pct(layer.weight)}</span>
-              </div>
-              <div className="wc-layer__score">
-                <strong>{pct(layer.score)}</strong>
-                <span>adds {pct(layer.weighted_score)}</span>
-              </div>
-            </div>
-            <div className="wc-bar" aria-hidden="true">
-              <span style={{ width: pct(layer.score) }} />
-            </div>
-            <p className="wc-layer__rationale">{layer.rationale}</p>
-            {layer.sources.length > 0 && (
-              <div className="wc-layer__sources">
-                {layer.sources.map((source) => (
-                  <span key={source}>{source}</span>
-                ))}
-              </div>
-            )}
-            {layer.evidence_snippets.length > 0 && (
-              <ul className="wc-snippets">
-                {layer.evidence_snippets.map((snippet, idx) => (
-                  <li key={`${layer.layer_key}-${idx}`}>{snippet}</li>
-                ))}
-              </ul>
-            )}
-            {layer.missing_evidence && (
-              <div className="wc-missing">
-                <AlertTriangle size={13} />
-                Missing or mocked evidence source
-              </div>
-            )}
-            {layer.contradiction && (
-              <div className="wc-missing wc-missing--contradiction">
-                <AlertTriangle size={13} />
-                Contradiction evidence flagged
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
+      {coreLayers.length > 0 && (
+        <div className="wc-layers">
+          {coreLayers.map((layer) => (
+            <EvidenceLayerCard key={layer.layer_key} layer={layer} />
+          ))}
+        </div>
+      )}
 
       {result && (
         <div className="wc-trail">
@@ -107,4 +122,10 @@ export function WeightedConfidencePanel({ claim, result, busy, error }: Props) {
       )}
     </section>
   );
+}
+
+export function getIndustryBenchmarkLayer(
+  result: WeightedVerificationResult | null,
+): EvidenceLayerScore | undefined {
+  return result?.layer_scores.find((l) => l.layer_key === 'industry_benchmark');
 }
