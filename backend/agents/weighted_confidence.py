@@ -9,7 +9,9 @@ from models.schemas import (
     EvidenceLayerKey,
     EvidenceLayerScore,
     ExtractedClaim,
+    JobstreetSampleReviewRow,
     PeerIntensityRow,
+    JobstreetReviewRow,
     VerificationRunResponse,
     WeightedVerificationState,
 )
@@ -313,18 +315,43 @@ class WeightedConfidenceAgent(BaseAgent):
                     company=r.company_name,
                     revenue_rm_million=r.revenue_rm_million,
                     scope_1_2_tco2e=r.scope_1_2_tco2e,
-                    scope_3_tco2e=r.scope_3_tco2e,
-                    total_scope_123_tco2e=r.total_scope_123_tco2e,
-                    intensity_scope_12_per_rm_million=r.intensity_scope_12,
-                    intensity_scope_3_per_rm_million=r.intensity_scope_3,
-                    intensity_total_per_rm_million=r.intensity_total,
-                    intensity_tco2e_per_rm_million=r.intensity_scope_12,
+                    intensity_tco2e_per_rm_million=r.intensity,
+                    scope_3_included=r.scope_3_included,
+                    emissions_note=r.emissions_note,
                     data_year=r.data_year,
                     data_found=r.data_found,
                     source=r.source,
                     is_target=r.is_target,
                 )
                 for r in live.peer_intensity_table
+            ]
+            jobstreet_rows: list[JobstreetReviewRow] = [
+                JobstreetReviewRow(
+                    company=r.company_name,
+                    overall_rating=r.overall_rating,
+                    review_count=r.review_count,
+                    work_life_balance=r.work_life_balance,
+                    career_development=r.career_development,
+                    working_environment=r.working_environment,
+                    recommend_pct=r.recommend_pct,
+                    ai_summary=r.ai_summary,
+                    timeline_note=r.timeline_note,
+                    trend_summary=r.trend_summary,
+                    sample_reviews=[
+                        JobstreetSampleReviewRow(
+                            review_date=s.review_date,
+                            role=s.role,
+                            rating=s.rating,
+                            positive=s.positive,
+                            negative=s.negative,
+                            tenure=s.tenure,
+                        )
+                        for s in r.sample_reviews
+                    ],
+                    jobstreet_url=r.jobstreet_url,
+                    is_target=r.is_target,
+                )
+                for r in live.jobstreet_table
             ]
 
             layer = _layer(
@@ -338,10 +365,11 @@ class WeightedConfidenceAgent(BaseAgent):
             )
             return layer.model_copy(update={
                 "peer_table": peer_rows,
+                "jobstreet_table": jobstreet_rows,
                 "benchmark_tldr": live.tldr or None,
                 "benchmark_insights": live.insights or None,
                 "benchmark_conclusion": live.conclusion or None,
-                "benchmark_unit": live.benchmark_unit if live.is_ghg_claim else None,
+                "benchmark_unit": live.benchmark_unit if (live.is_ghg_claim or live.is_social_claim) else None,
                 "peer_intensity_range": live.peer_intensity_range or None,
             })
 

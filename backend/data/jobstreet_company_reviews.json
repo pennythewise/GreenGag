@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "source": "Jobstreet Malaysia company reviews",
+  "last_updated": "2026-06-30",
+  "companies": [
+    {
+      "company_name": "Gamuda Berhad",
+      "jobstreet_slug": "gamuda-group-168553946574107",
+      "jobstreet_url": "https://my.jobstreet.com/companies/gamuda-group-168553946574107/reviews",
+      "overall_rating": 4.2,
+      "review_count": 103,
+      "recommend_pct": 76,
+      "salary_high_or_average_pct": 97,
+      "dimensions": {
+        "work_life_balance": 3.7,
+        "career_development": 4.0,
+        "benefits_perks": 4.3,
+        "management": 3.8,
+        "working_environment": 4.0,
+        "diversity_equal_opportunity": 4.2
+      },
+      "timeline_note": "103 reviews span roughly 2019–2025. A sharp negative IT review (Nov 2025) coexists with strong 2024–2025 site ratings — older negatives may not reflect current culture if the company changed since 2023.",
+      "trend_summary": "2024–2025 reviews praise benefits, career growth, and project exposure; recurring negatives are tight deadlines and work-life balance. Sep 2021 and Mar 2020 flag poor WLB and internal politics. Nov 2025 IT review is a recent outlier on leadership culture.",
+      "sample_reviews": [
+        {"review_date": "2025-11", "role": "IT Manager", "rating": 1.0, "tenure": "Less than 1 year, former employee", "positive": "Remuneration is fair.", "negative": "Lazy leadership style management and culture; IT strategy misaligned with civil-engineering core."},
+        {"review_date": "2025-03", "role": "Health and Safety Officer", "rating": 5.0, "tenure": "Less than 1 year, former employee", "positive": "Great career growth, competitive benefits, positive work culture, innovative global projects.", "negative": "High expectations, tight deadlines, fast-paced environment."},
+        {"review_date": "2024-03", "role": "Customer Service Executive", "rating": 5.0, "tenure": "5 to 6 years, former employee", "positive": "Happy working 6 years; good benefits and working environment.", "negative": "Many things to learn — steep learning curve."},
+        {"review_date": "2021-09", "role": "Junior quantity surveyor", "rating": 4.0, "tenure": "Less than 1 year, current employee", "positive": "Good exposure, monthly trainings, Toastmasters, good benefits for fresh graduates.", "negative": "Extremely poor work-life balance; high expectations for juniors."},
+        {"review_date": "2020-03", "role": "Executive", "rating": 2.0, "tenure": "Less than 1 year, current employee", "positive": "Organisation promotes positive philosophy on paper.", "negative": "Appraisal bias; philosophy described as fake; only ~20% understand it."}
+      ],
+      "ai_summary": "Employees appreciate friendly colleagues, teamwork culture, good benefits and fair remuneration. Valuable learning opportunities and exposure to innovative construction projects. Challenges include work-life balance due to tight deadlines, varying management styles, demanding workloads, and frequent travel between offices and sites.",
+      "sample_themes_positive": [
+        "Friendly and helpful colleagues",
+        "Good benefits and career growth",
+        "Innovative mega-project exposure"
+      ],
+      "sample_themes_negative": [
+        "Work-life balance on tight schedules",
+        "Management style varies by project",
+        "Frequent site travel"
+      ]
+    },
+    {
+      "company_name": "MGB Berhad",
+      "jobstreet_slug": "mgb-berhad-168535934297409",
+      "jobstreet_url": "https://my.jobstreet.com/companies/mgb-berhad-168535934297409/reviews",
+      "overall_rating": 4.4,
+      "review_count": 25,
+      "recommend_pct": 88,
+      "salary_high_or_average_pct": 100,
+      "dimensions": {
+        "work_life_balance": 3.8,
+        "career_development": 4.2,
+        "benefits_perks": 4.1,
+        "management": 3.7,
+        "working_environment": 4.2,
+        "diversity_equal_opportunity": 4.7
+      },
+      "timeline_note": "25 reviews mostly from 2020–2024. Weight reviews from the last 18 months higher when assessing current working culture.",
+      "trend_summary": "Consistently positive on team support, training for fresh graduates, and benefits. Peak-period workload and Mandarin workplace dynamics appear in older reviews; no strong deterioration signal in recent samples.",
+      "sample_reviews": [
+        {"review_date": "2023-08", "role": "Quantity surveyor", "rating": 4.5, "tenure": "1 to 2 years", "positive": "Supportive team, open-door management, good training.", "negative": "Heavy workload during closing periods."},
+        {"review_date": "2022-05", "role": "Site engineer", "rating": 4.0, "tenure": "Less than 1 year", "positive": "Collaborative cross-discipline learning, timely pay.", "negative": "Limited parking and dining nearby."},
+        {"review_date": "2021-11", "role": "Admin executive", "rating": 4.0, "tenure": "3 to 4 years", "positive": "Friendly colleagues, competitive benefits.", "negative": "Politics in some departments."}
+      ],
+      "ai_summary": "Supportive team environment with friendly colleagues and strong learning opportunities, especially for fresh graduates. Competitive benefits, open-door management, and positive culture. Challenges include peak-period workloads, structured approval tiers, and Mandarin-speaking workplace dynamics for some roles.",
+      "sample_themes_positive": [
+        "Supportive team and training",
+        "Good benefits and timely pay",
+        "Collaborative cross-discipline learning"
+      ],
+      "sample_themes_negative": [
+        "Heavy workload during closing periods",
+        "Limited parking and dining nearby",
+        "Politics in some departments"
+      ]
+    },
+    {
+      "company_name": "Kerjaya Prospek Group",
+      "jobstreet_slug": "kerjaya-prospek-group-168552770993145",
+      "jobstreet_url": "https://my.jobstreet.com/companies/kerjaya-prospek-group-168552770993145/reviews",
+      "overall_rating": null,
+      "review_count": null,
+      "recommend_pct": null,
+      "salary_high_or_average_pct": null,
+      "dimensions": {},
+      "timeline_note": "No curated local reviews yet — live benchmark will scrape Jobstreet on verification.",
+      "trend_summary": "",
+      "sample_reviews": [],
+      "ai_summary": "Jobstreet profile configured for live benchmark retrieval. Use OpenRouter to scrape latest employee ratings and working-environment themes.",
+      "sample_themes_positive": [],
+      "sample_themes_negative": []
+    },
+    {
+      "company_name": "WCT Holdings Berhad",
+      "jobstreet_slug": "wct-holdings-168557373989856",
+      "jobstreet_url": "https://my.jobstreet.com/companies/wct-holdings-168557373989856/reviews",
+      "overall_rating": 3.9,
+      "review_count": 89,
+      "recommend_pct": 80,
+      "salary_high_or_average_pct": 89,
+      "dimensions": {
+        "work_life_balance": 3.3,
+        "career_development": 3.7,
+        "benefits_perks": 3.4,
+        "management": 3.4,
+        "working_environment": 3.7,
+        "diversity_equal_opportunity": 2.4
+      },
+      "timeline_note": "89 reviews span ~2018–2025. Site-role reviews from 2022–2024 flag WLB issues; compare against any 2025 sustainability claims about employee wellbeing.",
+      "trend_summary": "Mega-project exposure and friendly colleagues remain stable positives. Management communication and career pathways are recurring negatives across years; recent reviews still mention demanding site schedules.",
+      "sample_reviews": [
+        {"review_date": "2024-06", "role": "Site engineer", "rating": 4.0, "tenure": "2 to 3 years", "positive": "Mega-project exposure, friendly colleagues, timely salary.", "negative": "Poor work-life balance on some sites."},
+        {"review_date": "2022-09", "role": "Project coordinator", "rating": 3.5, "tenure": "1 to 2 years", "positive": "Good teamwork across construction and property divisions.", "negative": "Upper-management transparency gaps."},
+        {"review_date": "2020-04", "role": "QS assistant", "rating": 4.0, "tenure": "Less than 1 year", "positive": "Learning opportunities on large projects.", "negative": "Limited career development pathways."}
+      ],
+      "ai_summary": "Friendly supportive colleagues and good teamwork with exposure to mega projects across construction, property, hospitality and aviation. Timely salary and learning opportunities. Challenges include upper-management transparency, demanding work-life balance on some projects, and room to improve systems and career pathways.",
+      "sample_themes_positive": [
+        "Mega-project exposure",
+        "Friendly colleagues and teamwork",
+        "Timely salary payments"
+      ],
+      "sample_themes_negative": [
+        "Management communication gaps",
+        "Poor work-life balance on some sites",
+        "Limited career development pathways"
+      ]
+    },
+    {
+      "company_name": "IJM Corporation Berhad",
+      "jobstreet_slug": "ijm-corporation-berhad-168535935053707",
+      "jobstreet_url": "https://my.jobstreet.com/companies/ijm-corporation-berhad-168535935053707/reviews",
+      "overall_rating": 4.0,
+      "review_count": 71,
+      "recommend_pct": 89,
+      "salary_high_or_average_pct": 83,
+      "dimensions": {
+        "work_life_balance": 3.7,
+        "career_development": 3.9,
+        "benefits_perks": 4.1,
+        "management": 3.7,
+        "working_environment": 3.9,
+        "diversity_equal_opportunity": 3.3
+      },
+      "timeline_note": "71 reviews span ~2017–2024. Manufacturing/operations roles report heavier hours — cross-check against 2025 social claims on training and wellbeing.",
+      "trend_summary": "Family-like culture and training programmes praised consistently since 2019. Operations roles flag demanding schedules; some units note old-school management and uneven progression clarity.",
+      "sample_reviews": [
+        {"review_date": "2023-11", "role": "Engineer", "rating": 4.0, "tenure": "3 to 4 years", "positive": "Supportive environment, comprehensive training, good benefits.", "negative": "Demanding schedules in operations."},
+        {"review_date": "2021-07", "role": "Graduate engineer", "rating": 4.5, "tenure": "Less than 1 year", "positive": "Strong training programmes, trust from management.", "negative": "Unclear development pathways in some units."},
+        {"review_date": "2019-03", "role": "Site supervisor", "rating": 3.5, "tenure": "5 to 6 years", "positive": "Family-like supportive culture.", "negative": "Traditional management approaches in places."}
+      ],
+      "ai_summary": "Supportive work environment with friendly colleagues and comprehensive training. Attractive benefits and trust from management with career progression potential. Challenges include demanding schedules in manufacturing/operations, traditional management approaches, and unclear development pathways in some units.",
+      "sample_themes_positive": [
+        "Family-like supportive culture",
+        "Strong training programmes",
+        "Good benefits package"
+      ],
+      "sample_themes_negative": [
+        "Demanding hours in operations roles",
+        "Old-school management in places",
+        "Uneven career progression clarity"
+      ]
+    },
+    {
+      "company_name": "Sunway Construction",
+      "jobstreet_slug": "sunway-construction-175161425274557",
+      "jobstreet_url": "https://my.jobstreet.com/companies/sunway-construction-175161425274557/reviews",
+      "overall_rating": 4.1,
+      "review_count": 56,
+      "recommend_pct": 93,
+      "salary_high_or_average_pct": 93,
+      "dimensions": {
+        "work_life_balance": 3.4,
+        "career_development": 4.0,
+        "benefits_perks": 4.3,
+        "management": 3.6,
+        "working_environment": 3.8,
+        "diversity_equal_opportunity": 2.5
+      },
+      "timeline_note": "56 reviews mostly 2019–2024. Appraisal politics mentioned in 2021–2023 reviews — verify whether 2025 culture initiatives changed this.",
+      "trend_summary": "Benefits and mentor quality stay strong across samples. Tight deadlines and review-period politics recur; work-life balance scores remain below overall rating.",
+      "sample_reviews": [
+        {"review_date": "2024-02", "role": "Site engineer", "rating": 4.5, "tenure": "2 to 3 years", "positive": "Strong medical coverage and bonuses, experienced mentors.", "negative": "Tight project deadlines."},
+        {"review_date": "2022-08", "role": "QS", "rating": 4.0, "tenure": "1 to 2 years", "positive": "Diverse friendly team, good learning.", "negative": "Internal politics during appraisals."},
+        {"review_date": "2020-06", "role": "Graduate engineer", "rating": 4.0, "tenure": "Less than 1 year", "positive": "Excellent learning with experienced colleagues.", "negative": "Work pressure and long hours."}
+      ],
+      "ai_summary": "Strong employee benefits including medical coverage and bonuses. Excellent learning with experienced colleagues in a friendly diverse environment. Challenges include tight deadlines, internal politics during appraisals, variable management styles, and demanding schedules affecting work-life balance.",
+      "sample_themes_positive": [
+        "Strong staff benefits and bonuses",
+        "Experienced mentors and learning",
+        "Diverse friendly team culture"
+      ],
+      "sample_themes_negative": [
+        "Tight project deadlines",
+        "Politics during performance reviews",
+        "Work pressure and long hours"
+      ]
+    },
+    {
+      "company_name": "Binastra Corporation",
+      "jobstreet_slug": "binastra-construction-168549549245114",
+      "jobstreet_url": "https://my.jobstreet.com/companies/binastra-construction-168549549245114/reviews",
+      "jobstreet_listing_name": "Binastra Construction",
+      "overall_rating": 3.9,
+      "review_count": 7,
+      "recommend_pct": 71,
+      "salary_high_or_average_pct": 85,
+      "dimensions": {
+        "work_life_balance": 2.9,
+        "career_development": 3.7,
+        "benefits_perks": 3.4,
+        "management": 3.6,
+        "working_environment": 3.3
+      },
+      "timeline_note": "Only 7 reviews, oldest from Jul 2015 and newest Sep 2023 — no post-2023 reviews. A harsh Sep 2023 site-supervisor review may not reflect 2025+ changes claimed in sustainability reports; treat pre-2020 positives as historical context.",
+      "trend_summary": "2015–2017 reviews praise kind leadership, teamwork, and a beginner-friendly site culture. 2019–2020 still positive on colleagues but flag public-holiday work and weak WLB. Sep 2023 is sharply negative on benefits and self-reliance — possible deterioration or isolated role, but no recent reviews confirm improvement.",
+      "sample_reviews": [
+        {"review_date": "2023-09", "role": "Site supervisor", "rating": 1.0, "tenure": "5 to 6 years in the role", "positive": "None cited.", "negative": "No standards or good benefits; heavy workload; must survive alone with no support."},
+        {"review_date": "2020-07", "role": "Senior site supervisor", "rating": 4.0, "tenure": "Senior Site Supervisor", "positive": "Hope to work together.", "negative": "Not accepted here — no further comment."},
+        {"review_date": "2019-12", "role": "Intern", "rating": 4.0, "tenure": "Less than 1 year, former employee", "positive": "Friendly helpful colleagues willing to teach.", "negative": "Public holidays still require work; poor work-life balance."},
+        {"review_date": "2017-06", "role": "Assistant project manager", "rating": 5.0, "tenure": "1 to 2 years, current employee", "positive": "Great boss; all perks.", "negative": "Adapting to new technologies."},
+        {"review_date": "2015-07", "role": "Contract manager", "rating": 4.0, "tenure": "Less than 1 year, former employee", "positive": "Kind motivating boss despite datuk title; humble and inspiring.", "negative": "Six-day weeks; involved in everything from planning to construction."}
+      ],
+      "ai_summary": "Employees appreciate friendly and helpful colleagues, a kind and motivating boss, and a work environment suited to beginners, with valued teamwork. Challenges include heavy workload with long hours and weekend work, weak work-life balance (including public-holiday duties), adapting to new technologies, and cultural or language barriers linked to a large Bangladeshi site workforce.",
+      "sample_themes_positive": [
+        "Friendly helpful colleagues",
+        "Kind motivating leadership",
+        "Good environment for career starters"
+      ],
+      "sample_themes_negative": [
+        "Long hours and six-day weeks",
+        "Public holidays still require work",
+        "Limited benefits vs workload expectations"
+      ]
+    }
+  ]
+}

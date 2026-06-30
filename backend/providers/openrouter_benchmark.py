@@ -16,26 +16,39 @@ import asyncio
 import json
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 from urllib.parse import urlparse
 
 from config import settings
 from models.schemas import ExtractedClaim
 from providers.construction_peer_registry import (
-    CompanyProfile,
     ConstructionBenchmarkContext,
     resolve_benchmark_context,
+)
+from providers.jobstreet_peer_registry import (
+    JobstreetCompanyReview,
+    jobstreet_peers_for_target,
+    match_jobstreet_to_construction_profile,
+    resolve_jobstreet_for_company,
 )
 
 logger = logging.getLogger("greengag.openrouter_benchmark")
 
 ALLOWED_SCORES = (0.0, 0.25, 0.5, 0.75, 1.0)
 URL_RE = re.compile(r"https?://[^\s\])\"']+")
+YEAR_RANK = {"FY2023": 0, "FY2024": 1, "FY2025": 2, "FY2026": 3}
 
 # Keywords that mark a claim as GHG / carbon-related
 _GHG_KEYWORDS = re.compile(
     r"\b(ghg|greenhouse|co2|co₂|carbon|scope\s*[123]|emission|tco2|tco₂|decarboni[sz]|net.?zero|climate)\b",
+    re.IGNORECASE,
+)
+
+_SOCIAL_KEYWORDS = re.compile(
+    r"\b(training|employee|workforce|safety|health|diversity|labour|labor|human rights|"
+    r"community|worker|staff|working environment|occupational|anti-corruption|grievance|"
+    r"hours|satisfaction|wellbeing|well-being|injury|ltifr|trifr)\b",
     re.IGNORECASE,
 )
 
@@ -48,20 +61,40 @@ class PeerIntensityRecord:
     company_name: str
     revenue_rm_million: float | None
     scope_1_2_tco2e: float | None
-    scope_3_tco2e: float | None
-    total_scope_123_tco2e: float | None
-    intensity_scope_12: float | None
-    intensity_scope_3: float | None
-    intensity_total: float | None
-    data_year: str | None
-    data_found: bool
-    source: str
+    intensity: float | None
+    scope_3_included: bool = False
+    emissions_note: str = ""
+    data_year: str | None = None
+    data_found: bool = False
+    source: str = ""
     is_target: bool = False
 
-    @property
-    def intensity(self) -> float | None:
-        """Backward-compatible alias for scope 1+2 intensity."""
-        return self.intensity_scope_12
+
+@dataclass(frozen=True)
+class JobstreetSampleReviewRecord:
+    review_date: str
+    role: str
+    rating: float | None = None
+    positive: str = ""
+    negative: str = ""
+    tenure: str = ""
+
+
+@dataclass(frozen=True)
+class JobstreetReviewRecord:
+    company_name: str
+    overall_rating: float | None
+    review_count: int | None
+    work_life_balance: float | None
+    career_development: float | None
+    working_environment: float | None
+    recommend_pct: float | None
+    ai_summary: str
+    jobstreet_url: str
+    timeline_note: str = ""
+    trend_summary: str = ""
+    sample_reviews: list[JobstreetSampleReviewRecord] = field(default_factory=list)
+    is_target: bool = False
 
 
 @dataclass(frozen=True)
@@ -75,8 +108,10 @@ class BenchmarkEvidence:
     provider: str = "none"
     peer_context: ConstructionBenchmarkContext | None = None
     peer_intensity_table: list[PeerIntensityRecord] = field(default_factory=list)
+    jobstreet_table: list[JobstreetReviewRecord] = field(default_factory=list)
     benchmark_unit: str = BENCHMARK_UNIT
     is_ghg_claim: bool = False
+    is_social_claim: bool = False
     insights: str = ""
     conclusion: str = ""
     tldr: str = ""
@@ -139,6 +174,7 @@ def _benchmark_claim_sync(
         return None
 
     ghg = _is_ghg_claim(claim)
+    social = _is_social_claim(claim)
     model = settings.openrouter_online_model
     if OPENROUTER_BENCHMARK_MODEL not in model:
         logger.warning(
@@ -146,7 +182,27 @@ def _benchmark_claim_sync(
             model,
             OPENROUTER_BENCHMARK_MODEL,
         )
-    prompt = _prompt_ghg_intensity(claim, context) if ghg else _prompt_general(claim, context)
+    if ghg:
+        prompt = _prompt_ghg_intensity(claim, context)
+        system_msg = (
+            "You are an ESG auditor benchmarking Malaysian construction companies. "
+            "Search sustainability/ESG reports for Scope 1+2 GHG emissions only. "
+            "If a report bundles Scope 3 into the figure, flag scope_3_included=true. "
+            "Return ONLY valid JSON."
+        )
+    elif social:
+        prompt = _prompt_social_jobstreet(claim, context)
+        system_msg = (
+            "You are an ESG auditor benchmarking social/working-environment claims for "
+            "Malaysian construction companies. Scrape the Jobstreet review pages provided "
+            "and compare employee sentiment vs the claim. Return ONLY valid JSON."
+        )
+    else:
+        prompt = _prompt_general(claim, context)
+        system_msg = (
+            "You are an ESG auditor benchmarking Malaysian construction companies. "
+            "Use live web evidence. Return ONLY valid JSON."
+        )
 
     try:
         client = OpenAI(
@@ -157,14 +213,7 @@ def _benchmark_claim_sync(
             model=model,
             temperature=0,
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an ESG auditor benchmarking Malaysian construction companies. "
-                        "Search sustainability and ESG reports (not financial statements alone) "
-                        "for Scope 1+2, Scope 3, and total GHG data. Return ONLY valid JSON."
-                    ),
-                },
+                {"role": "system", "content": system_msg},
                 {"role": "user", "content": prompt},
             ],
         )
@@ -205,15 +254,17 @@ def _benchmark_claim_sync(
 
     # Build peer intensity table from model response (GHG path only)
     peer_table: list[PeerIntensityRecord] = []
+    jobstreet_table: list[JobstreetReviewRecord] = []
     if ghg:
         raw_peer_data = [r for r in payload.get("peer_data", []) if isinstance(r, dict)]
         for row in raw_peer_data:
             peer_table.append(_peer_record_from_row(row))
+        peer_table = _latest_peer_rows_by_company(peer_table)
         peer_table.sort(
             key=lambda r: (
                 0 if r.is_target else 1,
                 r.company_name.lower(),
-                {"FY2023": 0, "FY2024": 1, "FY2025": 2, "FY2026": 3}.get(r.data_year or "", 99),
+                -YEAR_RANK.get(r.data_year or "", -1),
             )
         )
         invalid = _invalid_peer_names(
@@ -228,6 +279,17 @@ def _benchmark_claim_sync(
                 "Live search completed but no structured peer intensity rows were returned. "
                 "See rationale and evidence snippets below."
             )
+    elif social:
+        raw_js = [r for r in payload.get("jobstreet_data", []) if isinstance(r, dict)]
+        for row in raw_js:
+            jobstreet_table.append(_jobstreet_record_from_row(row))
+        if not jobstreet_table:
+            target_name = context.profile.company_name if context.profile else context.canonical_name
+            jobstreet_table = _local_jobstreet_baseline(target_name, context)
+        jobstreet_table = _enrich_jobstreet_from_local(jobstreet_table)
+        jobstreet_table.sort(key=lambda r: (0 if r.is_target else 1, r.company_name.lower()))
+        if not tldr:
+            tldr = "Jobstreet employee review benchmark for working environment and social claims."
     else:
         invalid = _invalid_peer_names(
             [str(n) for n in payload.get("peers_used", []) if n],
@@ -243,7 +305,11 @@ def _benchmark_claim_sync(
         f"Target: {target.company_name} | "
         f"FY2025 Revenue: {target.fy2025_total_revenue}. "
         if ghg and target
-        else (f"Peer benchmark | Target: {target.company_name}. " if target else "")
+        else (
+            f"Jobstreet social benchmark | Target: {target.company_name}. "
+            if social and target
+            else (f"Peer benchmark | Target: {target.company_name}. " if target else "")
+        )
     )
 
     return BenchmarkEvidence(
@@ -260,8 +326,10 @@ def _benchmark_claim_sync(
         provider=f"openrouter:{model}",
         peer_context=context,
         peer_intensity_table=peer_table,
-        benchmark_unit=BENCHMARK_UNIT if ghg else "varies",
+        jobstreet_table=jobstreet_table,
+        benchmark_unit=BENCHMARK_UNIT if ghg else ("Jobstreet rating (1–5)" if social else "varies"),
         is_ghg_claim=ghg,
+        is_social_claim=social,
         insights=insights,
         conclusion=conclusion,
         tldr=tldr,
@@ -272,7 +340,7 @@ def _benchmark_claim_sync(
 # ── Prompt builders ───────────────────────────────────────────────────────────
 
 def _prompt_ghg_intensity(claim: ExtractedClaim, context: ConstructionBenchmarkContext) -> str:
-    """GHG intensity benchmark via sustainability reports, FY2023–FY2025."""
+    """GHG intensity benchmark via latest sustainability reports."""
     target = context.profile
     claim_year = _claim_fy_year(claim)
 
@@ -299,10 +367,12 @@ def _prompt_ghg_intensity(claim: ExtractedClaim, context: ConstructionBenchmarkC
     return f"""
 You are benchmarking a GHG / carbon ESG claim for a Malaysian construction company.
 
-STANDARD BENCHMARK UNIT: tCO₂e / RM million revenue
-  intensity_scope_12 = (Scope 1 + Scope 2 tCO₂e) ÷ revenue (RM million)
-  intensity_scope_3  = Scope 3 tCO₂e ÷ revenue (RM million)
-  intensity_total    = (Scope 1 + Scope 2 + Scope 3 tCO₂e) ÷ revenue (RM million)
+STANDARD BENCHMARK UNIT: tCO₂e / RM million revenue (Scope 1 + Scope 2 ONLY)
+  intensity = (Scope 1 + Scope 2 tCO₂e) ÷ revenue (RM million)
+
+IMPORTANT: Do NOT report separate Scope 3 columns. If the sustainability report's
+"Scope 1+2" figure actually bundles Scope 3, set scope_3_included=true and
+emissions_note="(Scope 3 included)" on that row.
 
 {target_block}
 
@@ -320,22 +390,24 @@ ALL Malaysian construction companies in the peer registry (search EVERY company 
 {registry_block}
 
 DATA COLLECTION RULES:
-1. For EACH company above, search for their **Sustainability Report** or **ESG Report**
-   (NOT the financial/annual report — use sustainability/integrated sustainability disclosures only).
-2. For each company, extract for FY2023, FY2024, FY2025 (when published):
-   - Scope 1 + Scope 2 total GHG emissions (tCO₂e)
-   - Scope 3 total GHG emissions (tCO₂e) — omit row field if not disclosed
-   - Total Scope 1+2+3 (tCO₂e) — use reported total if given, else sum S1+2 and S3
-3. For each year found, extract that year's revenue (RM million) from the same sustainability
-   report or the corresponding annual report revenue note referenced in the sustainability report.
-4. Calculate all three intensity metrics per company-year:
-   - intensity_scope_12_per_rm_million
-   - intensity_scope_3_per_rm_million (null if Scope 3 not disclosed)
-   - intensity_total_per_rm_million
-5. Return ONE peer_data row per company per year (up to 3 rows per company).
-6. Mark is_target=true only for rows belonging to the target company.
-7. If a year is not found, omit that row (do not fabricate data).
-8. Source must cite the sustainability report name and URL if available.
+1. For EACH company above, search for their latest **Sustainability Report** or **ESG Report**
+   (NOT the financial/annual report alone — use sustainability/integrated sustainability disclosures).
+2. Prioritise the newest disclosed year in this order: FY2026, FY2025, FY2024, then FY2023.
+   - Prefer FY2025/FY2026 where available.
+   - Do NOT return an older FY2023 row when FY2024/FY2025/FY2026 is available.
+   - Use FY2023 only as a last resort and say in emissions_note that newer data was not found.
+3. For EACH company, return exactly ONE peer_data row: the latest available Scope 1+2 row.
+4. Extract Scope 1 + Scope 2 total GHG emissions (tCO₂e) and matching year revenue (RM million).
+5. Calculate intensity_tco2e_per_rm_million = scope_1_2_tco2e ÷ revenue_rm_million.
+6. If Scope 3 is bundled into the reported figure, set scope_3_included=true and emissions_note="(Scope 3 included)".
+7. If Scope 1+2 data cannot be found for a company after searching its latest reports, still return a row:
+   - data_found=false
+   - data_year=null
+   - numeric fields null
+   - emissions_note="Latest Scope 1+2 GHG data not found in FY2025/FY2026 sustainability report search"
+   - source should mention the searched report/page if known.
+8. Mark is_target=true only for rows belonging to the target company.
+9. Source must cite the sustainability report name and URL if available.
 
 TARGET COMPANY ROWS:
 - For the target company, use the submitted claim values where applicable.
@@ -343,7 +415,7 @@ TARGET COMPANY ROWS:
 - Flag internal inconsistency in the rationale if absolute ÷ revenue ≠ stated intensity.
 
 SCORING (use only 0, 0.25, 0.5, 0.75, 1):
-- 1.0: Target intensity within peer range for the claim year; 3+ peer year-data points found.
+- 1.0: Target intensity within latest peer range; 3+ latest peer data points found.
 - 0.75: Slightly outside peer range but plausible; or strong data with minor gaps.
 - 0.5: Only 1–2 comparable peer year-data points found.
 - 0.25: Insufficient sustainability report data across the registry.
@@ -354,41 +426,37 @@ Return JSON exactly:
   "score": 0.75,
   "contradiction": false,
   "tldr": "One sentence summary: where the target sits vs peers and whether the claim holds up.",
-  "peer_intensity_range": "e.g. S1+2: 2.3–78.3 | S3: 45–210 | Total: 50–280 tCO2e/RM million (FY2023–FY2025)",
+  "peer_intensity_range": "e.g. 2.3–8.4 tCO2e/RM million S1+2 (latest FY2025/FY2026 where available)",
   "peer_data": [
     {{
       "company": "Binastra Corporation",
-      "data_year": "FY2024",
-      "scope_1_2_tco2e": 85000,
-      "scope_3_tco2e": 120000,
-      "total_scope_123_tco2e": 205000,
-      "revenue_rm_million": 920.0,
-      "intensity_scope_12_per_rm_million": 92.39,
-      "intensity_scope_3_per_rm_million": 130.43,
-      "intensity_total_per_rm_million": 222.83,
+      "data_year": "FY2026",
+      "scope_1_2_tco2e": 4256.1,
+      "revenue_rm_million": 946.6,
+      "intensity_tco2e_per_rm_million": 4.5,
+      "scope_3_included": false,
+      "emissions_note": "",
       "data_found": true,
       "is_target": true,
       "source": "Binastra Sustainability Report 2024 — https://..."
     }},
     {{
       "company": "Sunway Construction",
-      "data_year": "FY2024",
-      "scope_1_2_tco2e": 12500,
-      "scope_3_tco2e": null,
-      "total_scope_123_tco2e": 12500,
-      "revenue_rm_million": 5100.0,
-      "intensity_scope_12_per_rm_million": 2.45,
-      "intensity_scope_3_per_rm_million": null,
-      "intensity_total_per_rm_million": 2.45,
-      "data_found": true,
+      "data_year": null,
+      "scope_1_2_tco2e": null,
+      "revenue_rm_million": null,
+      "intensity_tco2e_per_rm_million": null,
+      "scope_3_included": false,
+      "emissions_note": "Latest Scope 1+2 GHG data not found in FY2025/FY2026 sustainability report search",
+      "data_found": false,
       "is_target": false,
-      "source": "Sunway Construction Sustainability Report 2024 — https://..."
+      "source": "Searched Sunway Construction FY2025/FY2026 Sustainability Report"
     }}
   ],
   "evidence_snippets": ["max 4 short bullet findings"],
   "sources": ["sustainability report URLs"],
   "rationale": "Detailed scoring explanation (2–3 sentences)",
-  "insights": "2–3 sentences on sector trends, data gaps, and how target compares across FY2023–FY2025",
+  "insights": "2–3 sentences on latest-year sector trends, data gaps, and how target compares against peers",
   "conclusion": "One sentence verdict: plausible / aspirational / potential greenwashing"
 }}
 """.strip()
@@ -403,6 +471,104 @@ def _claim_fy_year(claim: ExtractedClaim) -> str | None:
     if match:
         return f"FY{match.group(1)}"
     return None
+
+
+def _prompt_social_jobstreet(claim: ExtractedClaim, context: ConstructionBenchmarkContext) -> str:
+    """Social / working-environment benchmark via Jobstreet employee reviews."""
+    target = context.profile
+    target_name = target.company_name if target else context.canonical_name
+
+    js_lines: list[str] = []
+    for review in jobstreet_peers_for_target(target_name):
+        is_target = _norm(review.company_name) == _norm(target_name)
+        baseline = (
+            f"overall={review.overall_rating}, reviews={review.review_count}, "
+            f"working_env={review.working_environment}, recommend={review.recommend_pct}%"
+            if review.overall_rating is not None
+            else "baseline pending live scrape"
+        )
+        js_lines.append(
+            f"  - {review.company_name}{' [TARGET]' if is_target else ''}\n"
+            f"    Jobstreet URL: {review.jobstreet_url}\n"
+            f"    Local baseline: {baseline}\n"
+            f"    Summary: {review.ai_summary[:200] if review.ai_summary else 'n/a'}"
+        )
+    jobstreet_block = "\n".join(js_lines) or "  - none configured"
+
+    target_block = f"Target company: {target_name}"
+    if target:
+        target_block += f"\nSubsector: {target.subsector_category}"
+
+    return f"""
+You are benchmarking a SOCIAL (S pillar) ESG claim for a Malaysian construction company
+using Jobstreet employee reviews about working environment, culture, training, and safety.
+
+{target_block}
+
+Claim being verified:
+- label: {claim.label}
+- raw_text: {claim.raw_text}
+- pillar: {claim.pillar}
+- metric: {claim.metric}
+- achieved_value: {claim.achieved_value}
+- unit: {claim.unit}
+- time_period: {claim.time_period}
+
+JOBSTREET PEER REVIEW PAGES (scrape EVERY URL below):
+{jobstreet_block}
+
+TASKS:
+1. Visit each Jobstreet reviews URL and extract: overall rating (1–5), review count,
+   work/life balance, career development, working environment, % recommend to friends.
+2. For EACH company, pick 3–5 individual employee reviews dated between 2020 and 2026
+   (include at least one from 2024–2026 if available, and one older review for trend).
+   Extract review_date (YYYY-MM), role, rating, tenure, positive themes, negative themes.
+3. Write timeline_note: warn that older reviews (e.g. 2020–2023) may not reflect culture
+   changes claimed in 2025+ sustainability reports — weight recent reviews higher.
+4. Write trend_summary: AI summary of how sentiment evolved across the sampled years.
+5. Compare the target company's employee sentiment vs peers for the claim topic
+   (e.g. training hours, safety culture, employee satisfaction, working environment).
+6. Flag contradiction if the claim strongly conflicts with employee review themes.
+7. Score using only: 0, 0.25, 0.5, 0.75, 1.
+
+Return JSON exactly:
+{{
+  "score": 0.75,
+  "contradiction": false,
+  "tldr": "One sentence: how employee reviews align or conflict with the social claim.",
+  "jobstreet_data": [
+    {{
+      "company": "Gamuda Berhad",
+      "overall_rating": 4.2,
+      "review_count": 103,
+      "work_life_balance": 3.7,
+      "career_development": 4.0,
+      "working_environment": 4.0,
+      "recommend_pct": 76,
+      "ai_summary": "Brief employee sentiment summary from Jobstreet.",
+      "timeline_note": "Reviews span 2019–2025. Weight 2024–2025 reviews higher than pre-2023 posts.",
+      "trend_summary": "How sentiment changed across sampled years.",
+      "sample_reviews": [
+        {{
+          "review_date": "2025-03",
+          "role": "Health and Safety Officer",
+          "rating": 5.0,
+          "tenure": "Less than 1 year, former employee",
+          "positive": "Great career growth and positive work culture.",
+          "negative": "High expectations and tight deadlines."
+        }}
+      ],
+      "jobstreet_url": "https://my.jobstreet.com/companies/gamuda-group-168553946574107/reviews",
+      "is_target": false
+    }}
+  ],
+  "evidence_snippets": ["max 4 short findings from Jobstreet reviews"],
+  "sources": ["Jobstreet review URLs"],
+  "rationale": "Scoring explanation (2–3 sentences)",
+  "insights": "Sector social/working-environment trends from reviews",
+  "conclusion": "One sentence verdict on claim credibility vs employee sentiment"
+}}
+""".strip()
 
 
 def _prompt_general(claim: ExtractedClaim, context: ConstructionBenchmarkContext) -> str:
@@ -480,6 +646,16 @@ def _is_ghg_claim(claim: ExtractedClaim) -> bool:
     return bool(_GHG_KEYWORDS.search(text))
 
 
+def _is_social_claim(claim: ExtractedClaim) -> bool:
+    if _is_ghg_claim(claim):
+        return False
+    pillar = (claim.pillar or "").strip().lower()
+    if pillar in ("social", "s", "people"):
+        return True
+    text = " ".join(filter(None, [claim.raw_text, claim.metric, claim.category, claim.label]))
+    return bool(_SOCIAL_KEYWORDS.search(text))
+
+
 def _invalid_peer_names(
     names: list[Any],
     context: ConstructionBenchmarkContext,
@@ -525,42 +701,176 @@ def _normalize_data_year(raw: Any) -> str | None:
 def _peer_record_from_row(row: dict[str, Any]) -> PeerIntensityRecord:
     rev = _float_or_none(row.get("revenue_rm_million"))
     s12 = _float_or_none(row.get("scope_1_2_tco2e"))
-    s3 = _float_or_none(row.get("scope_3_tco2e"))
-    total = _float_or_none(row.get("total_scope_123_tco2e"))
-    if total is None:
-        if s12 is not None and s3 is not None:
-            total = s12 + s3
-        elif s12 is not None:
-            total = s12
+    scope_3_included = bool(row.get("scope_3_included", False))
+    emissions_note = str(row.get("emissions_note") or "").strip()
+    if scope_3_included and not emissions_note:
+        emissions_note = "(Scope 3 included)"
 
-    i12 = _float_or_none(row.get("intensity_scope_12_per_rm_million"))
-    if i12 is None:
-        i12 = _float_or_none(row.get("intensity_tco2e_per_rm_million"))
-    if i12 is None:
-        i12 = _intensity_per_rm_million(s12, rev)
-
-    i3 = _float_or_none(row.get("intensity_scope_3_per_rm_million"))
-    if i3 is None:
-        i3 = _intensity_per_rm_million(s3, rev)
-
-    itotal = _float_or_none(row.get("intensity_total_per_rm_million"))
-    if itotal is None:
-        itotal = _intensity_per_rm_million(total, rev)
+    intensity = _float_or_none(row.get("intensity_tco2e_per_rm_million"))
+    if intensity is None:
+        intensity = _float_or_none(row.get("intensity_scope_12_per_rm_million"))
+    if intensity is None:
+        intensity = _intensity_per_rm_million(s12, rev)
 
     return PeerIntensityRecord(
         company_name=str(row.get("company", "")),
         revenue_rm_million=rev,
         scope_1_2_tco2e=s12,
-        scope_3_tco2e=s3,
-        total_scope_123_tco2e=total,
-        intensity_scope_12=i12,
-        intensity_scope_3=i3,
-        intensity_total=itotal,
+        intensity=intensity,
+        scope_3_included=scope_3_included,
+        emissions_note=emissions_note,
         data_year=_normalize_data_year(row.get("data_year")),
         data_found=bool(row.get("data_found", False)),
         source=str(row.get("source", "web search")),
         is_target=bool(row.get("is_target", False)),
     )
+
+
+def _latest_peer_rows_by_company(
+    rows: list[PeerIntensityRecord],
+) -> list[PeerIntensityRecord]:
+    """Keep one latest row per company, preferring disclosed FY2025/FY2026 data."""
+    latest: dict[str, PeerIntensityRecord] = {}
+    for row in rows:
+        key = _norm(row.company_name)
+        if not key:
+            continue
+        existing = latest.get(key)
+        if existing is None:
+            latest[key] = row
+            continue
+
+        row_rank = YEAR_RANK.get(row.data_year or "", -1)
+        existing_rank = YEAR_RANK.get(existing.data_year or "", -1)
+        row_score = (1 if row.data_found else 0, row_rank)
+        existing_score = (1 if existing.data_found else 0, existing_rank)
+        if row_score > existing_score:
+            latest[key] = row
+
+    out: list[PeerIntensityRecord] = []
+    for row in latest.values():
+        if row.data_found and row.data_year == "FY2023" and not row.emissions_note:
+            row = replace(
+                row,
+                emissions_note="Latest available row is FY2023; FY2025/FY2026 Scope 1+2 data not found",
+            )
+        out.append(row)
+    return out
+
+
+def _jobstreet_record_from_row(row: dict[str, Any]) -> JobstreetReviewRecord:
+    return JobstreetReviewRecord(
+        company_name=str(row.get("company", "")),
+        overall_rating=_float_or_none(row.get("overall_rating")),
+        review_count=_int_or_none(row.get("review_count")),
+        work_life_balance=_float_or_none(row.get("work_life_balance")),
+        career_development=_float_or_none(row.get("career_development")),
+        working_environment=_float_or_none(row.get("working_environment")),
+        recommend_pct=_float_or_none(row.get("recommend_pct")),
+        ai_summary=str(row.get("ai_summary") or ""),
+        jobstreet_url=str(row.get("jobstreet_url") or ""),
+        timeline_note=str(row.get("timeline_note") or ""),
+        trend_summary=str(row.get("trend_summary") or ""),
+        sample_reviews=_sample_reviews_from_row(row.get("sample_reviews")),
+        is_target=bool(row.get("is_target", False)),
+    )
+
+
+def _sample_reviews_from_row(raw: Any) -> list[JobstreetSampleReviewRecord]:
+    if not isinstance(raw, list):
+        return []
+    out: list[JobstreetSampleReviewRecord] = []
+    for item in raw[:5]:
+        if not isinstance(item, dict):
+            continue
+        date = str(item.get("review_date") or item.get("date") or "").strip()
+        role = str(item.get("role") or "").strip()
+        if not date and not role:
+            continue
+        out.append(
+            JobstreetSampleReviewRecord(
+                review_date=date,
+                role=role,
+                rating=_float_or_none(item.get("rating")),
+                positive=str(item.get("positive") or item.get("pros") or "").strip(),
+                negative=str(item.get("negative") or item.get("cons") or "").strip(),
+                tenure=str(item.get("tenure") or "").strip(),
+            )
+        )
+    return out
+
+
+def _sample_reviews_from_local(reviews: list[JobstreetSampleReview]) -> list[JobstreetSampleReviewRecord]:
+    return [
+        JobstreetSampleReviewRecord(
+            review_date=r.review_date,
+            role=r.role,
+            rating=r.rating,
+            positive=r.positive,
+            negative=r.negative,
+            tenure=r.tenure,
+        )
+        for r in reviews
+    ]
+
+
+def _enrich_jobstreet_from_local(rows: list[JobstreetReviewRecord]) -> list[JobstreetReviewRecord]:
+    enriched: list[JobstreetReviewRecord] = []
+    for row in rows:
+        local = resolve_jobstreet_for_company(row.company_name)
+        if not local:
+            enriched.append(row)
+            continue
+        enriched.append(
+            replace(
+                row,
+                timeline_note=row.timeline_note or local.timeline_note,
+                trend_summary=row.trend_summary or local.trend_summary,
+                sample_reviews=row.sample_reviews or _sample_reviews_from_local(local.sample_reviews),
+                ai_summary=row.ai_summary or local.ai_summary,
+            )
+        )
+    return enriched
+
+
+def _local_jobstreet_baseline(
+    target_name: str,
+    context: ConstructionBenchmarkContext,
+) -> list[JobstreetReviewRecord]:
+    rows: list[JobstreetReviewRecord] = []
+    for review in jobstreet_peers_for_target(target_name):
+        is_target = _norm(review.company_name) == _norm(target_name)
+        if context.profile and not is_target:
+            matched = match_jobstreet_to_construction_profile(context.profile.company_name)
+            if matched and _norm(matched.company_name) == _norm(review.company_name):
+                is_target = True
+        rows.append(
+            JobstreetReviewRecord(
+                company_name=review.company_name,
+                overall_rating=review.overall_rating,
+                review_count=review.review_count,
+                work_life_balance=review.work_life_balance,
+                career_development=review.career_development,
+                working_environment=review.working_environment,
+                recommend_pct=review.recommend_pct,
+                ai_summary=review.ai_summary,
+                jobstreet_url=review.jobstreet_url,
+                timeline_note=review.timeline_note,
+                trend_summary=review.trend_summary,
+                sample_reviews=_sample_reviews_from_local(review.sample_reviews),
+                is_target=is_target,
+            )
+        )
+    return rows
+
+
+def _int_or_none(value: Any) -> int | None:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _parse_json(text: str) -> dict[str, Any] | None:

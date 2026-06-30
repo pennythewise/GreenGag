@@ -162,17 +162,39 @@ export interface PeerIntensityRow {
   company: string;
   revenue_rm_million: number | null;
   scope_1_2_tco2e: number | null;
-  scope_3_tco2e: number | null;
-  total_scope_123_tco2e: number | null;
-  intensity_scope_12_per_rm_million: number | null;
-  intensity_scope_3_per_rm_million: number | null;
-  intensity_total_per_rm_million: number | null;
-  /** Alias for scope 1+2 intensity (backward compatible). */
   intensity_tco2e_per_rm_million: number | null;
+  scope_3_included: boolean;
+  emissions_note: string;
   data_year: string | null;
   data_found: boolean;
   source: string;
-  /** True for the company being audited; false for peer companies. */
+  is_target: boolean;
+}
+
+/** Individual Jobstreet review excerpt for timeline trend analysis. */
+export interface JobstreetSampleReviewRow {
+  review_date: string;
+  role: string;
+  rating: number | null;
+  positive: string;
+  negative: string;
+  tenure: string;
+}
+
+/** Jobstreet employee review row for social benchmark. */
+export interface JobstreetReviewRow {
+  company: string;
+  overall_rating: number | null;
+  review_count: number | null;
+  work_life_balance: number | null;
+  career_development: number | null;
+  working_environment: number | null;
+  recommend_pct: number | null;
+  ai_summary: string;
+  timeline_note?: string;
+  trend_summary?: string;
+  sample_reviews?: JobstreetSampleReviewRow[];
+  jobstreet_url: string;
   is_target: boolean;
 }
 
@@ -189,6 +211,7 @@ export interface EvidenceLayerScore {
   contradiction: boolean;
   /** GHG intensity comparison table — populated for industry_benchmark layer when live search ran. */
   peer_table?: PeerIntensityRow[];
+  jobstreet_table?: JobstreetReviewRow[];
   /** One-line TLDR for auditors. */
   benchmark_tldr?: string | null;
   /** AI-generated insights paragraph from sustainability report comparison. */

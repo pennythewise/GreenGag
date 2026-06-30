@@ -149,15 +149,37 @@ class PeerIntensityRow(BaseModel):
     company: str
     revenue_rm_million: float | None = None
     scope_1_2_tco2e: float | None = None
-    scope_3_tco2e: float | None = None
-    total_scope_123_tco2e: float | None = None
-    intensity_scope_12_per_rm_million: float | None = None
-    intensity_scope_3_per_rm_million: float | None = None
-    intensity_total_per_rm_million: float | None = None
-    intensity_tco2e_per_rm_million: float | None = None  # alias for scope 1+2
+    intensity_tco2e_per_rm_million: float | None = None
+    scope_3_included: bool = False
+    emissions_note: str = ""
     data_year: str | None = None
     data_found: bool = False
     source: str = ""
+    is_target: bool = False
+
+
+class JobstreetSampleReviewRow(BaseModel):
+    review_date: str = ""
+    role: str = ""
+    rating: float | None = None
+    positive: str = ""
+    negative: str = ""
+    tenure: str = ""
+
+
+class JobstreetReviewRow(BaseModel):
+    company: str
+    overall_rating: float | None = None
+    review_count: int | None = None
+    work_life_balance: float | None = None
+    career_development: float | None = None
+    working_environment: float | None = None
+    recommend_pct: float | None = None
+    ai_summary: str = ""
+    timeline_note: str = ""
+    trend_summary: str = ""
+    sample_reviews: list[JobstreetSampleReviewRow] = Field(default_factory=list)
+    jobstreet_url: str = ""
     is_target: bool = False
 
 
@@ -174,6 +196,7 @@ class EvidenceLayerScore(BaseModel):
     contradiction: bool = False
     # GHG intensity benchmark table (populated for industry_benchmark layer only)
     peer_table: list[PeerIntensityRow] = Field(default_factory=list)
+    jobstreet_table: list[JobstreetReviewRow] = Field(default_factory=list)
     benchmark_tldr: str | None = None
     benchmark_insights: str | None = None
     benchmark_conclusion: str | None = None
