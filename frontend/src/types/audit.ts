@@ -57,14 +57,31 @@ export interface HighlightBox {
   h: number;
 }
 
+export type EsgPillar = 'environment' | 'social' | 'governance';
+
 export interface ExtractedClaim {
   id: string;
   label: string;
   raw_text: string;
+  pillar?: EsgPillar;
+  category?: string;
+  claim_type?: string;
+  entity?: string;
+  metric?: string;
+  target_value?: string;
+  achieved_value?: string;
+  baseline_value?: string;
+  time_period?: string;
+  location?: string;
+  unit?: string;
+  page?: number;
+  section_heading?: string;
+  key_metrics?: Record<string, string | number | boolean | null>;
+  confidence?: number;
   claimed_reduction_pct?: number;
   material_class?: string;
   stated_spend_usd?: number;
-  highlight: HighlightBox;
+  highlight?: HighlightBox;
 }
 
 export interface PdfBlock {
@@ -81,10 +98,10 @@ export interface PdfPage {
 }
 
 export interface ReportParserState extends BaseAgentState {
-  document: {
+  document?: {
     title: string;
     pages: PdfPage[];
-  };
+  } | null;
   extracted_claims: ExtractedClaim[];
 }
 
@@ -129,6 +146,97 @@ export interface MediaArticle {
 
 export interface MediaSentinelState extends BaseAgentState {
   articles: MediaArticle[];
+}
+
+/* ── Weighted Confidence Verification ─────────────────────────────────── */
+
+export type EvidenceLayerKey =
+  | 'official_report'
+  | 'financial_statements'
+  | 'historical_consistency'
+  | 'methodology'
+  | 'industry_benchmark';
+
+/** One row in the GHG intensity comparison table (industry_benchmark layer only). */
+export interface PeerIntensityRow {
+  company: string;
+  revenue_rm_million: number | null;
+  scope_1_2_tco2e: number | null;
+  intensity_tco2e_per_rm_million: number | null;
+  scope_3_included: boolean;
+  emissions_note: string;
+  data_year: string | null;
+  data_found: boolean;
+  source: string;
+  is_target: boolean;
+}
+
+/** Individual Jobstreet review excerpt for timeline trend analysis. */
+export interface JobstreetSampleReviewRow {
+  review_date: string;
+  role: string;
+  rating: number | null;
+  positive: string;
+  negative: string;
+  tenure: string;
+}
+
+/** Jobstreet employee review row for social benchmark. */
+export interface JobstreetReviewRow {
+  company: string;
+  overall_rating: number | null;
+  review_count: number | null;
+  work_life_balance: number | null;
+  career_development: number | null;
+  working_environment: number | null;
+  recommend_pct: number | null;
+  ai_summary: string;
+  timeline_note?: string;
+  trend_summary?: string;
+  sample_reviews?: JobstreetSampleReviewRow[];
+  jobstreet_url: string;
+  is_target: boolean;
+}
+
+export interface EvidenceLayerScore {
+  layer_key: EvidenceLayerKey;
+  label: string;
+  weight: number;
+  score: number;
+  weighted_score: number;
+  evidence_snippets: string[];
+  sources: string[];
+  rationale: string;
+  missing_evidence: boolean;
+  contradiction: boolean;
+  /** GHG intensity comparison table — populated for industry_benchmark layer when live search ran. */
+  peer_table?: PeerIntensityRow[];
+  jobstreet_table?: JobstreetReviewRow[];
+  /** One-line TLDR for auditors. */
+  benchmark_tldr?: string | null;
+  /** AI-generated insights paragraph from sustainability report comparison. */
+  benchmark_insights?: string | null;
+  /** One-sentence verdict on claim credibility. */
+  benchmark_conclusion?: string | null;
+  /** Standard unit used for comparison, e.g. "tCO₂e / RM million revenue". */
+  benchmark_unit?: string | null;
+  /** Observed peer intensity range across FY2023–FY2025. */
+  peer_intensity_range?: string | null;
+}
+
+export interface WeightedVerificationResult {
+  id: string;
+  document_id: string;
+  claim_id: string;
+  overall_score: number;
+  uncapped_score?: number | null;
+  contradiction_flag: boolean;
+  score_cap_applied: boolean;
+  score_cap_reason?: string | null;
+  layer_scores: EvidenceLayerScore[];
+  rationale_trail: string[];
+  mode: 'mock' | 'live';
+  created_at?: string | null;
 }
 
 /* ── Agent 5: Geospatial Truth ────────────────────────────────────────── */

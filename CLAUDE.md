@@ -16,21 +16,20 @@ GreenGag is a high-stakes multi-agent greenwashing detection platform. It audits
 | Frontend | React (component-driven) |
 | Maps | Mapbox or Leaflet |
 | Database | PostgreSQL |
-| Satellite APIs | Sentinel-5P TROPOMI, Planet Labs, Google Earth Engine |
 | Scraping/NLP | Custom pipelines + text classification models |
 
 ## Project Structure
 
 ```
 GreenGag/
-├── backend/                     # Python FastAPI package (see backend/README.md)
-│   └── greengag/
-│       ├── main.py
-│       ├── api/routes/
-│       ├── agents/
-│       ├── models/
-│       ├── mocks/
-│       └── scoring/
+├── backend/                     # Python FastAPI app (see backend/README.md)
+│   ├── main.py
+│   ├── api/routes/
+│   ├── agents/
+│   │   └── report_parser/     # ingest, extract, report, store, prompts
+│   ├── models/
+│   ├── mocks/
+│   └── scoring/
 ├── frontend/                    # React wizard dashboard (see frontend/README.md)
 │   └── src/
 │       ├── app/
@@ -65,7 +64,7 @@ class AuditPayload(BaseModel):
 
 - All secrets loaded via `os.getenv()` — never hardcoded.
 - Copy `.env.example` to `.env` to run locally. Never commit `.env`.
-- Required keys: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `PLANET_LABS_API_KEY`, `SENTINEL_HUB_CLIENT_ID`, `SENTINEL_HUB_CLIENT_SECRET`, `GOOGLE_EARTH_ENGINE_CREDENTIALS`, `NEWS_API_KEY`, `INTERNAL_LEDGER_DB_URL`.
+- Required keys for live document pipeline: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Industry benchmark: `OPENROUTER_API_KEY`.
 - Boot script in `config.py` must validate all keys are present at startup and raise explicit errors for any missing values.
 
 ## Agent Implementation Notes
@@ -86,11 +85,11 @@ class AuditPayload(BaseModel):
 ## Commands
 
 ```bash
-# Backend
+# Backend (from backend/)
 cd backend
 pip install -r requirements.txt
-cp ../.env.example ../.env   # then fill in keys
-uvicorn greengag.main:app --reload
+cp ../.env.example ../.env   # repo root .env
+uvicorn main:app --reload --port 8000
 
 # Frontend
 cd frontend

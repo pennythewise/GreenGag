@@ -1,102 +1,130 @@
 # GreenGag — Greenwashing Audit Console
 
-Multi-agent greenwashing detection platform. It audits corporate ESG claims by
-cross-referencing unstructured PDF reports against financial ledgers, public
-media, and satellite remote-sensing data, then surfaces a weighted fraud risk
-score to compliance auditors.
+Multi-agent platform that audits corporate ESG claims by cross-referencing PDF reports, financial ledgers, media, and geospatial data, then surfaces a weighted fraud-risk score for compliance reviewers.
 
-
-This build runs **mock-first**: the full agent graph and dashboard work
-end-to-end against deterministic fixtures with no external API keys. Live API
-integrations (Sentinel-5P, Planet Labs, NewsAPI, Postgres ledger) drop in behind
-the same interfaces — see `GREENGAG_DATA_MODE` below.
+This build is **mock-first**: the full wizard (Upload → Claims → Evidence → Dashboard) runs without API keys. The **Report Parser** ingest/extract pipeline can run live when Supabase + OpenAI are configured.
 
 ---
 
-## What's implemented
+## Quick start (local dev)
 
-**Backend** (`backend/greengag/`, FastAPI + async)
-- `greengag/models/schemas.py` — Pydantic `AuditPayload` contract (single source of truth).
-- `greengag/config.py` — `os.getenv()` bindings + startup validation.
-- `greengag/agents/` — 5 async agents + LangGraph orchestrator.
-- `greengag/scoring/integrity.py` — Weighted Integrity Index (geospatial = 50%, veto).
-- `greengag/api/routes/` — `GET /api/health`, `POST /api/audit`, `GET /api/audit/stream` (SSE).
+Use **two terminals** from the project root `GreenGag/`.
 
-**Frontend** (`frontend/src/`, React + TypeScript + Vite)
-- Wizard flow: Upload → Claims → Evidence → Dashboard.
-- `components/audit/` — XAI surfaces (PDF, ledger, map, discrepancy canvas, …).
-- `components/wizard/` — step views; `components/layout/` — sidebar stepper.
+### Terminal 1 — Backend (port 8000)
 
----
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy ..\.env.example ..\.env
+uvicorn main:app --reload --port 8000
+```
 
-## Run it
-
-### Backend
+macOS / Linux:
 
 ```bash
 cd backend
-python3.11 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example ../.env     # optional; mock mode runs without keys
-uvicorn greengag.main:app --reload      # http://localhost:8000
+cp ../.env.example ../.env
+uvicorn main:app --reload --port 8000
 ```
 
-Sanity check:
+Sanity check: open [http://localhost:8000/api/health](http://localhost:8000/api/health) — expect `"status": "ok"`.
 
-```bash
-curl localhost:8000/api/health
-curl -X POST localhost:8000/api/audit | jq '.global_metrics'
-```
+### Terminal 2 — Frontend (port 5173)
 
-### Frontend
-
-```bash
+```powershell
 cd frontend
 npm install
-npm run dev                    # http://localhost:5173
+npm run dev
 ```
 
-The Vite dev server proxies `/api` → `http://localhost:8000`, so the dashboard
-streams from the live backend automatically. Click **Re-run Audit** to replay
-the cascade. With the backend stopped, it falls back to the local mock.
+Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` → `http://localhost:8000`.
 
 ---
 
-## Data modes
+## Demo workflow (no keys required)
 
-`GREENGAG_DATA_MODE` (in `.env`, default `mock`):
+1. **Upload** — click **Load sample report** (uses mock document + fixture claims).
+2. **Claims** — review extracted claims; after extraction finishes, **Generate extraction report** appears (PDF needs WeasyPrint on Windows — see backend README).
+3. **Evidence** — select a claim → **Triangulate evidence** to run the agent cascade (SSE).
+4. **Dashboard** — weighted integrity index and executive summary.
 
-- `mock` — agents return deterministic fixtures (`greengag/mocks/fixtures.py`,
-  mirrored in `frontend/src/mocks/auditPayload.ts`). No external calls.
-- `live` — agents call real APIs. Each agent's `_run_live()` is stubbed with the
-  exact integration TODO; `config.py` requires all 8 secrets at startup.
-
-Required live keys: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `PLANET_LABS_API_KEY`,
-`SENTINEL_HUB_CLIENT_ID`, `SENTINEL_HUB_CLIENT_SECRET`,
-`GOOGLE_EARTH_ENGINE_CREDENTIALS`, `NEWS_API_KEY`, `INTERNAL_LEDGER_DB_URL`.
+Without Supabase/OpenAI keys, document endpoints return the same deterministic mock data as the frontend fixtures.
 
 ---
 
-## The contract
+## Project layout
 
-Both sides build against one schema. Backend `greengag/models/schemas.py::AuditPayload`
-and frontend `src/types/audit.ts::AuditPayload` are kept in lockstep — the SSE
-stream deserializes straight into the React components.
+| Path | Role |
+|------|------|
+| `backend/` | FastAPI app — run `uvicorn main:app` from here |
+| `backend/agents/report_parser/` | PDF ingest, RAG extract, report PDF |
+| `backend/models/schemas.py` | `AuditPayload` contract (mirrors frontend types) |
+| `backend/supabase/` | SQL schema for live RAG (pgvector) |
+| `frontend/src/` | React wizard + audit surfaces |
+| `.env.example` | Copy to `.env` at **repo root** |
+
+---
+
+## Configuration
+
+Copy `.env.example` → `.env` at the **repository root** (not inside `backend/`).
+
+| Variable | Purpose |
+|----------|---------|
+| `GREENGAG_DATA_MODE` | `mock` (default) or `live` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY` | Live Report Parser pipeline |
+| Other keys | Full live audit agents (ledger, media, geo) — mostly stubbed |
+
+**Mock mode** — no keys required; agents and document API use `backend/mocks/fixtures.py`.
+
+**Live Report Parser** — set the three pipeline keys above and apply `backend/supabase/schema.sql` in Supabase. See [backend/supabase/README.md](backend/supabase/README.md).
+
+**Live audit (`GREENGAG_DATA_MODE=live`)** — requires pipeline keys above; ledger, media, and geospatial agents still use mock fixtures or raise `NotImplementedError`.
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| `ModuleNotFoundError: No module named 'greengag'` | Old entrypoint — use `uvicorn main:app` from `backend/`, not `greengag.main:app`. |
+| Frontend loads but upload/extract fails | Start backend on `:8000`; check [http://localhost:8000/api/health](http://localhost:8000/api/health). |
+| Report PDF returns 503 | Install WeasyPrint native libs (Windows: MSYS2) — [backend README](backend/README.md). |
+| Live ingest fails | Apply Supabase schema; verify `SUPABASE_*` and `OPENAI_API_KEY` in root `.env`. |
+| `.venv\Scripts\activate` not found | Use `.venv` not `venv`; create with `python -m venv .venv` inside `backend/`. |
+
+---
+
+## API overview
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health + data mode |
+| POST | `/api/audit` | Start orchestrated audit |
+| GET | `/api/audit/stream` | SSE agent updates |
+| POST | `/api/documents/ingest` | Upload PDF |
+| POST | `/api/documents/{id}/extract` | RAG + LLM claim extraction |
+| POST | `/api/documents/{id}/report/pdf` | Extraction report PDF |
+| GET | `/api/documents/{id}` | Document status + claims |
+
+Full backend notes: [backend/README.md](backend/README.md).
+
+---
+
+## Data contract
+
+Backend `models/schemas.py::AuditPayload` and frontend `src/types/audit.ts::AuditPayload` stay in lockstep. The SSE stream deserializes directly into React state.
 
 ```
 AuditPayload
-├── meta            target_entity, project_name, coordinates (GeoJSON Polygon)
-├── agent_states    per-agent status / risk_contribution / rationale_trail + findings
-├── discrepancies   triangulated claim ↔ evidence linkages (drive the SVG canvas)
-└── global_metrics  weighted_risk_score, confidence, verdict, executive_summary
+├── meta              target_entity, project_name, coordinates
+├── agent_states      per-agent status, risk, rationale_trail
+├── discrepancies     claim ↔ evidence linkages
+└── global_metrics    weighted_risk_score, verdict, summary
 ```
 
-## Notes & known gaps
-
-- **MapCanvas** renders the heatmap + claimed-vs-observed time series with
-  dependency-free SVG. Swap in Mapbox/Leaflet behind it for live tiles.
-- The PRD sample payload uses status `"COMPLETED"` and omits MediaSentinelAgent;
-  this build follows the CLAUDE.md enum (`IDLE|PROCESSING|SUCCESS|ALERT`, with
-  `SUCCESS` ≙ completed) and includes all 5 agents.
-- `agents/*/_run_live()` methods raise `NotImplementedError` with the specific
-  integration each needs — the live wiring is the next milestone.
+Geospatial agent carries **50%** of the Weighted Integrity Index and holds veto power.

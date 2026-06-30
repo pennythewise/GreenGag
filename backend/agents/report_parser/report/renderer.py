@@ -1,0 +1,251 @@
+"""Build Jinja context and render extraction report PDF."""
+
+from __future__ import annotations
+
+import base64
+from pathlib import Path
+from typing import Any
+
+from mocks import fixtures
+from models.schemas import ExtractedClaim
+from ..store.document_store import DocumentStore
+
+from .insights import (
+    DISCLAIMER,
+    build_conclusion,
+)
+
+TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
+PILLARS = ("environment", "social", "governance")
+
+
+def _claim_to_view(claim: ExtractedClaim | dict[str, Any]) -> dict[str, Any]:
+    if isinstance(claim, ExtractedClaim):
+        data = claim.model_dump()
+    else:
+        data = dict(claim)
+
+    fields: list[dict[str, str]] = []
+    if data.get("pillar"):
+        fields.append({"key": "pillar", "value": str(data["pillar"])})
+    if data.get("claim_type"):
+        fields.append({"key": "claim_type", "value": str(data["claim_type"])})
+    if data.get("category"):
+        fields.append({"key": "category", "value": str(data["category"])})
+    if data.get("entity"):
+        fields.append({"key": "entity", "value": str(data["entity"])})
+    if data.get("metric"):
+        fields.append({"key": "metric", "value": str(data["metric"])})
+    if data.get("target_value"):
+        fields.append({"key": "target_value", "value": str(data["target_value"])})
+    if data.get("achieved_value"):
+        fields.append({"key": "achieved_value", "value": str(data["achieved_value"])})
+    if data.get("baseline_value"):
+        fields.append({"key": "baseline_value", "value": str(data["baseline_value"])})
+    if data.get("time_period"):
+        fields.append({"key": "time_period", "value": str(data["time_period"])})
+    if data.get("unit"):
+        fields.append({"key": "unit", "value": str(data["unit"])})
+    if data.get("page") is not None:
+        fields.append({"key": "page", "value": f"p.{data['page']}"})
+    conf = data.get("confidence")
+    if conf is not None:
+        fields.append({"key": "confidence", "value": f"{round(float(conf) * 100)}%"})
+
+    return {
+        "id": data.get("id", ""),
+        "label": data.get("label", ""),
+        "raw_text": data.get("raw_text", ""),
+        "pillar": data.get("pillar"),
+        "fields": fields,
+    }
+
+
+def _claim_overview_to_view(claim: dict[str, Any]) -> dict[str, str]:
+    return {
+        "pillar": str(claim.get("pillar") or "—"),
+        "category": str(claim.get("category") or "—"),
+        "claim": str(claim.get("label") or claim.get("raw_text") or "—"),
+        "baseline_value": str(claim.get("baseline_value") or "—"),
+        "target_value": str(claim.get("target_value") or "—"),
+        "time_period": str(claim.get("time_period") or "—"),
+    }
+
+
+def _claim_pages(claims: list[dict[str, Any]], *, limit: int = 8) -> list[int]:
+    pages: set[int] = set()
+    for claim in claims:
+        page = claim.get("page")
+        if isinstance(page, int) and page > 0:
+            pages.add(page)
+    return sorted(pages)[:limit]
+
+
+def _source_page_snapshots(
+    *,
+    document: dict[str, Any],
+    claims: list[dict[str, Any]],
+    store: DocumentStore,
+) -> list[dict[str, str | int]]:
+    storage_path = document.get("storage_path")
+    if not storage_path:
+        return []
+
+    pages = _claim_pages(claims)
+    if not pages:
+        return []
+
+    try:
+        import fitz
+
+        pdf_bytes = store.download_pdf(str(storage_path))
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+        snapshots: list[dict[str, str | int]] = []
+        matrix = fitz.Matrix(1.25, 1.25)
+
+        for page_no in pages:
+            index = page_no - 1
+            if index < 0 or index >= pdf.page_count:
+                continue
+            page = pdf.load_page(index)
+            pix = page.get_pixmap(matrix=matrix, alpha=False)
+            image_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
+            snapshots.append(
+                {
+                    "page": page_no,
+                    "src": f"data:image/png;base64,{image_b64}",
+                }
+            )
+
+        pdf.close()
+        return snapshots
+    except Exception:
+        return []
+
+
+def _summary_stats(claims: list[dict[str, Any]]) -> dict[str, Any]:
+    by_pillar = {p: 0 for p in PILLARS}
+    pages: set[int] = set()
+    confidences: list[float] = []
+
+    for claim in claims:
+        pillar = claim.get("pillar")
+        if pillar in by_pillar:
+            by_pillar[pillar] += 1
+        page = claim.get("page")
+        if isinstance(page, int):
+            pages.add(page)
+        if claim.get("confidence") is not None:
+            confidences.append(float(claim["confidence"]))
+
+    return {
+        "total_claims": len(claims),
+        "by_pillar": by_pillar,
+        "pages_covered": sorted(pages),
+        "avg_confidence": round(sum(confidences) / len(confidences), 2) if confidences else None,
+    }
+
+
+def _mock_context() -> dict[str, Any]:
+    parser = fixtures.report_parser_state()
+    claims = [c.model_dump() for c in parser.extracted_claims]
+    notes = ["Mock extraction — demonstration data only."]
+    return _assemble_context(
+        document={
+            "id": "mock-document",
+            "original_filename": "2025_Sustainability_Net-Zero_Pathway.pdf",
+            "document_title": parser.document.title if parser.document else None,
+            "reporting_entity": "Malaya BuildCorp Group",
+            "reporting_year": "2025",
+        },
+        claims=claims,
+        extraction_notes=notes,
+        pillar_status={
+            "environment": {"status": "ok", "best_score": 0.82},
+            "social": {"status": "ok", "best_score": 0.71},
+            "governance": {"status": "ok", "best_score": 0.68},
+        },
+    )
+
+
+def _assemble_context(
+    *,
+    document: dict[str, Any],
+    claims: list[dict[str, Any]],
+    extraction_notes: list[str],
+    pillar_status: dict[str, Any] | None = None,
+    source_pages: list[dict[str, str | int]] | None = None,
+) -> dict[str, Any]:
+    summary = _summary_stats(claims)
+    return {
+        "report_title": "GreenGag ESG Extraction Report",
+        "document": document,
+        "summary": summary,
+        "claim_overview": [_claim_overview_to_view(c) for c in claims],
+        "source_pages": source_pages or [],
+        "claims": [_claim_to_view(c) for c in claims],
+        "conclusion": build_conclusion(summary["total_claims"]),
+        "disclaimer": DISCLAIMER,
+    }
+
+
+def load_report_context(document_id: str) -> dict[str, Any]:
+    if document_id == "mock-document":
+        return _mock_context()
+
+    store = DocumentStore()
+    doc = store.get_document(document_id)
+    if not doc:
+        raise LookupError(f"Document {document_id} not found.")
+    if doc.get("extract_status") != "complete":
+        raise ValueError(
+            "Document extraction is not complete — run extract before generating a report."
+        )
+
+    rows = store.list_claims(document_id)
+    run = store.get_latest_extraction_run(document_id)
+    notes = list(run.get("extraction_notes") or []) if run else []
+    pillar_status = run.get("pillar_status") if run else {}
+    source_pages = _source_page_snapshots(document=doc, claims=rows, store=store)
+
+    return _assemble_context(
+        document=doc,
+        claims=rows,
+        extraction_notes=notes,
+        pillar_status=pillar_status if isinstance(pillar_status, dict) else {},
+        source_pages=source_pages,
+    )
+
+
+def render_extraction_report_pdf(document_id: str) -> tuple[bytes, str]:
+    context = load_report_context(document_id)
+    html = _render_html(context)
+    pdf_bytes = _html_to_pdf(html)
+    filename = context["document"].get("original_filename", "report")
+    safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in filename)
+    download_name = f"GreenGag-extraction-{safe.rsplit('.', 1)[0]}.pdf"
+    return pdf_bytes, download_name
+
+
+def _render_html(context: dict[str, Any]) -> str:
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+    env = Environment(
+        loader=FileSystemLoader(str(TEMPLATE_DIR)),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    return env.get_template("extraction_report.html").render(**context)
+
+
+def _html_to_pdf(html: str) -> bytes:
+    try:
+        from weasyprint import CSS, HTML
+    except (ImportError, OSError) as exc:
+        raise ImportError(
+            "WeasyPrint native libraries are not available — see backend/README.md."
+        ) from exc
+
+    css_path = TEMPLATE_DIR / "greengag_report.css"
+    return HTML(string=html, base_url=str(TEMPLATE_DIR)).write_pdf(
+        stylesheets=[CSS(filename=str(css_path))]
+    )

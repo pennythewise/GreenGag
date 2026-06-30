@@ -3,11 +3,19 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 pydantic>=2.9.0
 python-dotenv>=1.0.1
+python-multipart>=0.0.9
 
-# Agent orchestration (graph supervisor). The app degrades gracefully to a
-# sequential runner if this is not installed.
+# Agent orchestration
 langgraph>=0.2.0
 
-# LLM SDKs (used only in GREENGAG_DATA_MODE=live)
-anthropic>=0.39.0
+# LLM + embeddings
 openai>=1.54.0
+sentence-transformers>=3.0.0
+
+# PDF (layout-aware via pymupdf4llm + pymupdf_layout) + Supabase
+pymupdf4llm==1.27.2.3
+supabase>=2.10.0
+
+# Extraction report PDF
+jinja2>=3.1.0
+weasyprint>=62.0

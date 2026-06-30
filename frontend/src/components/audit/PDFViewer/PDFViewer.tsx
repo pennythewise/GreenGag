@@ -25,10 +25,15 @@ export function PDFViewer({ state }: { state: ReportParserState }) {
         </div>
       </div>
 
-      <div className="pdfv__doc-title">{state.document.title}</div>
+      <div className="pdfv__doc-title">{state.document?.title ?? 'ESG Report'}</div>
 
       <div className="pdfv__pages gg-scroll">
-        {state.document.pages.map((page) => (
+        {(state.document?.pages ?? []).length === 0 ? (
+          <p className="pdfv__empty">
+            Page preview unavailable — select a claim to inspect structured fields.
+          </p>
+        ) : (
+          state.document!.pages.map((page) => (
           <article key={page.page} className="pdfv__page">
             <header className="pdfv__page-head">
               <span className="pdfv__page-no">p.{page.page}</span>
@@ -56,7 +61,8 @@ export function PDFViewer({ state }: { state: ReportParserState }) {
               );
             })}
           </article>
-        ))}
+        ))
+        )}
       </div>
 
       <div className="pdfv__legend">

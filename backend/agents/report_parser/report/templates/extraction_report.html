@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ report_title }}</title>
+  <link rel="stylesheet" href="greengag_report.css" />
+</head>
+<body>
+
+  <section class="cover">
+    <div class="cover__brand">GreenGag</div>
+    <h1 class="cover__title">{{ report_title }}</h1>
+    <p class="cover__subtitle">Structured extraction of measurable ESG claims from corporate sustainability reporting</p>
+
+    <dl class="cover__meta">
+      {% if document.reporting_entity %}
+      <dt>Reporting entity</dt>
+      <dd>{{ document.reporting_entity }}</dd>
+      {% endif %}
+      {% if document.document_title %}
+      <dt>Document title</dt>
+      <dd>{{ document.document_title }}</dd>
+      {% endif %}
+      <dt>Source file</dt>
+      <dd>{{ document.original_filename }}</dd>
+      {% if document.reporting_year %}
+      <dt>Reporting year</dt>
+      <dd>{{ document.reporting_year }}</dd>
+      {% endif %}
+    </dl>
+  </section>
+
+  <section class="summary">
+    <h2>Executive summary</h2>
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-card__value">{{ summary.total_claims }}</div>
+        <div class="stat-card__label">Claims extracted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__value">{{ summary.by_pillar.environment }}</div>
+        <div class="stat-card__label">Environment</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__value">{{ summary.by_pillar.social }}</div>
+        <div class="stat-card__label">Social</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__value">{{ summary.by_pillar.governance }}</div>
+        <div class="stat-card__label">Governance</div>
+      </div>
+    </div>
+
+    {% if summary.pages_covered %}
+    <p>
+      Pages referenced:
+      {% for p in summary.pages_covered %}{% if not loop.first %}, {% endif %}p.{{ p }}{% endfor %}
+      {% if summary.avg_confidence is not none %}
+      · Average confidence: {{ (summary.avg_confidence * 100)|round|int }}%
+      {% endif %}
+    </p>
+    {% endif %}
+  </section>
+
+  <section class="claims-overview">
+    <h2>Claims overview</h2>
+    {% if claim_overview %}
+    <table class="claims-table">
+      <thead>
+        <tr>
+          <th>Pillar</th>
+          <th>Category</th>
+          <th>Claim</th>
+          <th>Baseline value</th>
+          <th>Target value</th>
+          <th>Time period</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in claim_overview %}
+        <tr>
+          <td>{{ item.pillar }}</td>
+          <td>{{ item.category }}</td>
+          <td>{{ item.claim }}</td>
+          <td>{{ item.baseline_value }}</td>
+          <td>{{ item.target_value }}</td>
+          <td>{{ item.time_period }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No claims were extracted from this document.</p>
+    {% endif %}
+  </section>
+
+  {% if source_pages %}
+  <section class="source-pages">
+    <h2>Source page snapshots</h2>
+    <p class="source-pages__intro">
+      Visual excerpts from the uploaded report pages referenced by extracted claims.
+    </p>
+    {% for source_page in source_pages %}
+    <article class="source-page">
+      <h3>Source page {{ source_page.page }}</h3>
+      <img src="{{ source_page.src }}" alt="Source PDF page {{ source_page.page }}" />
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="claims-section">
+    <h2>Extracted claims</h2>
+    {% if claims %}
+      {% for claim in claims %}
+        {% include "partials/claim_card.html" %}
+      {% endfor %}
+    {% else %}
+      <p>No claims were extracted from this document.</p>
+    {% endif %}
+  </section>
+
+  <section class="conclusion-block">
+    <h2>Conclusion</h2>
+    <div class="conclusion">
+      <p>{{ conclusion }}</p>
+    </div>
+    <p class="disclaimer">{{ disclaimer }}</p>
+  </section>
+
+</body>
+</html>

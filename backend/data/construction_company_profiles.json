@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "sector": "construction",
+  "country": "Malaysia",
+  "companies": [
+    {
+      "company_name": "Sunway Construction",
+      "subsector_category": "Vertically integrated building, data centres, infrastructure, precast concrete",
+      "company_size": "Large (~RM5.5B – RM9.4B market cap)",
+      "fy2025_total_revenue": "RM5.34 Billion"
+    },
+    {
+      "company_name": "Gamuda Berhad",
+      "subsector_category": "Civil engineering, mega infrastructure (rail, highways), property development",
+      "company_size": "Mega (~RM24.2B – RM27.5B market cap)",
+      "fy2025_total_revenue": "RM15.97 Billion"
+    },
+    {
+      "company_name": "IJM Corporation Berhad",
+      "subsector_category": "Diversified construction, building & infrastructure, ports, toll concessions, spun piles",
+      "company_size": "Large (~RM7.4B – RM9.3B market cap)",
+      "fy2025_total_revenue": "RM6.25 Billion"
+    },
+    {
+      "company_name": "WCT Holdings Berhad",
+      "subsector_category": "Engineering & construction, property development, retail mall/hotel management",
+      "company_size": "Medium (~RM660M market cap)",
+      "fy2025_total_revenue": "RM1.97 Billion"
+    },
+    {
+      "company_name": "Kerjaya Prospek Group",
+      "subsector_category": "Premium high-rise residential construction, commercial buildings, property development",
+      "company_size": "Mid-Large (~RM2.34B market cap)",
+      "fy2025_total_revenue": "RM2.20 Billion"
+    },
+    {
+      "company_name": "MGB Berhad",
+      "subsector_category": "Affordable housing, mass residential construction, Industrialised Building Systems (IBS)",
+      "company_size": "Small-Mid (~RM400M market cap)",
+      "fy2025_total_revenue": "RM916.9 Million"
+    }, 
+    {
+      "company_name": "Binastra Corporation",
+      "subsector_category": "High-rise residential, mixed developments, thermal energy",
+      "company_size": "Mid-Sized (~RM2.3B market cap)",
+      "fy2025_total_revenue": "RM946.6 Million"
+    }
+  ]
+}
