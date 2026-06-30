@@ -67,7 +67,7 @@ The backend is an asynchronous Python server using **FastAPI** to handle heavy s
 
 #### Agent 5: Geospatial Truth Agent (The Ultimate Juror)
 - **Role:** Physical verification anchor using planetary data science. **Holds absolute veto power in the final summary.**
-- **Task:** Queries remote sensing satellite APIs (Sentinel-5P TROPOMI, Planet Labs) using coordinates from the Report Parser. Measures the physical state of atmosphere and terrain over a time-series interval.
+- **Task:** Queries remote sensing data using coordinates from the Report Parser. Measures the physical state of atmosphere and terrain over a time-series interval (live provider TBD; mock fixtures today).
 - **Target Data:** Atmospheric gas column densities (NO₂, CH₄, CO₂) over factories; temporal phase-growth speeds of buildings to catch timeline fraud.
 - **Frontend/XAI:** Interactive map canvas (Mapbox or Leaflet) with a color-coded heatmap overlay of actual gas emissions. Side-by-side time-series graph contrasting company's *claimed* emissions drop vs. satellite's *observed* flatline.
 
@@ -152,12 +152,6 @@ The backend is an asynchronous Python server using **FastAPI** to handle heavy s
 # Core System Orchestration
 OPENAI_API_KEY=your_openai_api_key_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Remote Sensing & Satellite APIs
-PLANET_LABS_API_KEY=your_planet_labs_key_here
-GOOGLE_EARTH_ENGINE_CREDENTIALS=your_gee_json_path_here
-SENTINEL_HUB_CLIENT_ID=your_sentinel_hub_id_here
-SENTINEL_HUB_CLIENT_SECRET=your_sentinel_hub_secret_here
 
 # Financial & External Data
 NEWS_API_KEY=your_news_api_key_here

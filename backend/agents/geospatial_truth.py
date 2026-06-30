@@ -22,11 +22,10 @@ class GeospatialTruthAgent(BaseAgent):
         return fixtures.geospatial_truth_state()
 
     async def _run_live(self) -> GeospatialTruthState:
-        # TODO(live): query Sentinel-5P TROPOMI / Planet Labs over the polygon
-        # (SENTINEL_HUB_*, PLANET_LABS_API_KEY, GOOGLE_EARTH_ENGINE_CREDENTIALS),
+        # TODO(live): wire a remote-sensing provider over the target polygon,
         # compute the NO2 running mean, and assert veto on a flatline.
         raise NotImplementedError(
-            "GeospatialTruthAgent live mode requires Sentinel/Planet credentials."
+            "GeospatialTruthAgent live mode is not wired yet."
         )
 
     def asserts_veto(self, state: GeospatialTruthState) -> bool:

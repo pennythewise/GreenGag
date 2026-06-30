@@ -83,7 +83,7 @@ Copy `.env.example` → `.env` at the **repository root** (not inside `backend/`
 
 **Live Report Parser** — set the three pipeline keys above and apply `backend/supabase/schema.sql` in Supabase. See [backend/supabase/README.md](backend/supabase/README.md).
 
-**Live audit (`GREENGAG_DATA_MODE=live`)** — requires all keys in `.env.example`; several agents still raise `NotImplementedError` for external integrations.
+**Live audit (`GREENGAG_DATA_MODE=live`)** — requires pipeline keys above; ledger, media, and geospatial agents still use mock fixtures or raise `NotImplementedError`.
 
 ---
 

@@ -19,15 +19,8 @@ except ImportError:
 
 logger = logging.getLogger("greengag.config")
 
-# Full live audit (satellite / geospatial agents — optional for document pipeline).
 REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
     "Core orchestration": ("OPENAI_API_KEY",),
-    "Remote sensing": (
-        "PLANET_LABS_API_KEY",
-        "SENTINEL_HUB_CLIENT_ID",
-        "SENTINEL_HUB_CLIENT_SECRET",
-        "GOOGLE_EARTH_ENGINE_CREDENTIALS",
-    ),
 }
 
 # Report Parser ingest + extract pipeline (RAG + OpenAI extraction).

@@ -1,0 +1,63 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PORT: 8000
+      GREENGAG_DATA_MODE: ${GREENGAG_DATA_MODE:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-large}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-2000}
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD:-0.55}
+      RAG_TOP_K_PER_PILLAR: ${RAG_TOP_K_PER_PILLAR:-8}
+      RAG_MAX_CHUNKS_TO_LLM: ${RAG_MAX_CHUNKS_TO_LLM:-20}
+      LLM_EXTRACTION_MODEL: ${LLM_EXTRACTION_MODEL:-gpt-4o}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Local development database only. The app currently talks to Supabase via
+  # SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, so Railway should normally use the
+  # Supabase project or Railway-managed Postgres plus an API layer migration.
+  database:
+    image: pgvector/pgvector:pg16
+    profiles: ["database"]
+    environment:
+      POSTGRES_DB: greengag
+      POSTGRES_USER: greengag
+      POSTGRES_PASSWORD: greengag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init/00_extensions.sql:/docker-entrypoint-initdb.d/00_extensions.sql:ro
+      - ./backend/supabase/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U greengag -d greengag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
